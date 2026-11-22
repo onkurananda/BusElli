@@ -99,6 +99,8 @@ h1{font-size:22px;font-weight:800;margin-bottom:4px;color:#f1f5f9}
 /* FAB */
 .fab-btn{position:absolute;bottom:84px;right:20px;width:52px;height:52px;background:#1d4ed8;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:20px;cursor:pointer;box-shadow:0 4px 20px rgba(29,78,216,.5);border:none;color:#fff;transition:transform .2s}
 .fab-btn:active{transform:scale(.92)}
+/* MAP FAB */
+.map-fab-btn{position:absolute;bottom:84px;right:20px;width:52px;height:52px;background:#1d4ed8;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:20px;cursor:pointer;box-shadow:0 4px 20px rgba(29,78,216,.5);border:none;color:#fff;transition:transform .2s;z-index:20}
 /* DRAWER */
 .drawer-overlay{position:absolute;bottom:0;left:0;right:0;background:#1a2035;border-radius:20px 20px 0 0;padding:20px;border-top:1px solid #2a3550;z-index:60;display:none}
 .drawer-overlay.open{display:block}
@@ -132,6 +134,31 @@ h1{font-size:22px;font-weight:800;margin-bottom:4px;color:#f1f5f9}
 .alarm-active-stop{font-size:17px;font-weight:800;color:#fff}
 .alarm-active-meta{font-size:11px;color:#818cf8;margin-top:4px}
 .vibe-btn{margin-top:12px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);border-radius:8px;padding:8px 14px;color:#e0e7ff;font-size:12px;font-weight:600;cursor:pointer;display:inline-block}
+/* MAP SCREEN */
+.map-header{background:linear-gradient(135deg,#1e3a8a,#1d4ed8);padding:12px 20px 10px}
+.map-header-top{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.map-title{font-size:15px;font-weight:800;color:#fff}
+.map-sub{font-size:10px;color:#93c5fd}
+.map-filter-row{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;padding-bottom:2px}
+.map-filter-row::-webkit-scrollbar{display:none}
+.filter-chip{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);border-radius:16px;padding:4px 10px;font-size:10px;color:#e0e7ff;font-weight:600;cursor:pointer;white-space:nowrap;transition:all .2s;flex-shrink:0}
+.filter-chip.active-chip{background:#3b82f6;border-color:#3b82f6;color:#fff}
+/* map container fills remaining space between header and bottom nav */
+#mapContainer{flex:1;position:relative;min-height:0;background:#1a2035;overflow:hidden}
+#googleMap{width:100%;height:100%}
+/* API key notice banner */
+.api-banner{position:absolute;top:0;left:0;right:0;background:#1e293b;border-bottom:1px solid #334155;padding:8px 12px;z-index:30;display:flex;flex-direction:column;gap:4px}
+.api-banner-title{font-size:10px;font-weight:700;color:#fbbf24}
+.api-banner-body{font-size:9px;color:#94a3b8;line-height:1.5}
+.api-banner input{width:100%;background:#0f172a;border:1px solid #475569;border-radius:6px;padding:5px 8px;color:#e2e8f0;font-size:10px;margin-top:2px}
+.api-banner-btn{background:#1d4ed8;color:#fff;border:none;border-radius:6px;padding:5px 10px;font-size:10px;font-weight:700;cursor:pointer;margin-top:4px;width:100%}
+/* static map fallback (shown when no API key) */
+#staticMapFallback{position:absolute;top:0;left:0;right:0;bottom:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:16px}
+/* Bus cluster cards overlaid on map */
+.bus-overlay-card{position:absolute;background:#111827;border:1px solid #374151;border-radius:10px;padding:7px 10px;font-size:10px;color:#e2e8f0;min-width:110px;cursor:pointer;box-shadow:0 2px 12px rgba(0,0,0,.5);z-index:25;transition:transform .2s}
+.bus-overlay-card:hover{transform:scale(1.04)}
+.bus-overlay-num{font-size:11px;font-weight:800;color:#60a5fa;display:flex;align-items:center;gap:5px}
+.bus-overlay-crowd{font-size:9px;margin-top:2px}
 /* LEGEND PANEL */
 .legend{max-width:260px;padding-top:8px}
 .legend h2{font-size:14px;font-weight:700;color:#e2e8f0;margin-bottom:12px}
@@ -144,13 +171,20 @@ h1{font-size:22px;font-weight:800;margin-bottom:4px;color:#f1f5f9}
 .screen-nav-btn{display:block;width:100%;background:#1a2035;border:1px solid #2a3550;border-radius:8px;padding:9px 12px;color:#94a3b8;font-size:12px;text-align:left;cursor:pointer;margin-bottom:6px;transition:all .2s}
 .screen-nav-btn:hover,.screen-nav-btn.active-btn{background:#1e3a5f;border-color:#2563eb;color:#93c5fd}
 .spacer{height:16px}
-footer{text-align:center;margin-top:28px;border-top:1px solid #1e2533;padding-top:14px;color:#374151;font-size:11px;width:100%;max-width:700px}
+footer{text-align:center;margin-top:28px;border-top:1px solid #1e2533;padding-top:14px;color:#374151;font-size:11px;width:100%;max-width:800px}
+/* API key instruction box in legend */
+.api-instruction{background:#1a2035;border:1px solid #2a3550;border-radius:10px;padding:14px;margin-bottom:12px}
+.api-instruction h3{font-size:11px;font-weight:700;color:#fbbf24;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px}
+.api-step{display:flex;gap:8px;margin-bottom:7px;align-items:flex-start}
+.api-step-num{background:#1d4ed8;color:#fff;border-radius:50%;width:17px;height:17px;font-size:9px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}
+.api-step span{font-size:10px;color:#94a3b8;line-height:1.5}
+.api-step a{color:#60a5fa;text-decoration:none}
 </style>
 </head>
 <body>
 
 <h1>🚌 BusElli — Interactive Prototype</h1>
-<p class="sub">Bengaluru Offline-First Crowdsourced Bus Tracking · Tap through 3 screens</p>
+<p class="sub">Bengaluru Offline-First Crowdsourced Bus Tracking · 4 screens including live Google Maps view</p>
 
 <div class="layout">
 
@@ -161,7 +195,7 @@ footer{text-align:center;margin-top:28px;border-top:1px solid #1e2533;padding-to
       <!-- ════ SCREEN 1: HOME ════ -->
       <div id="screen-home" class="screen active">
         <div class="status-bar">
-          <span class="status-time">9:14</span>
+          <span class="status-time" id="time-home">9:14</span>
           <div class="status-icons"><span>▲▼ 4G</span><span>🔋</span></div>
         </div>
         <div class="app-header">
@@ -194,7 +228,7 @@ footer{text-align:center;margin-top:28px;border-top:1px solid #1e2533;padding-to
               <div class="bus-pill"><span class="crowd-dot r"></span><span class="bus-num">335E</span><span class="eta-text">7 min</span></div>
               <div class="bus-pill"><span class="crowd-dot y"></span><span class="bus-num">KIA-9</span><span class="eta-text">12 min</span></div>
             </div>
-            <div class="nearby-card">
+            <div class="nearby-card" onclick="showScreen('map')">
               <div class="stop-name">BTM 2nd Stage</div>
               <div class="walk-dist">🚶 420m away</div>
               <div class="bus-pill"><span class="crowd-dot g"></span><span class="bus-num">201R</span><span class="eta-text">5 min</span></div>
@@ -231,15 +265,15 @@ footer{text-align:center;margin-top:28px;border-top:1px solid #1e2533;padding-to
               <div class="route-eta-min">next bus</div>
             </div>
           </div>
-          <div class="route-row" onclick="showScreen('route')">
-            <div class="route-num">335E</div>
+          <div class="route-row" onclick="showScreen('map')">
+            <div class="route-num" style="background:#0369a1">MAP</div>
             <div class="route-info">
-              <div class="route-desc">Majestic → Whitefield</div>
-              <div class="route-stops">via Tin Factory, ITPL Gate</div>
+              <div class="route-desc">Live Bus Map — ORR Corridor</div>
+              <div class="route-stops">All routes near you</div>
             </div>
             <div style="text-align:right">
-              <div class="route-eta">7 min</div>
-              <div class="route-eta-min">next bus</div>
+              <div class="route-eta" style="font-size:11px;color:#38bdf8">View →</div>
+              <div class="route-eta-min">Google Maps</div>
             </div>
           </div>
           <div class="spacer"></div>
@@ -247,16 +281,149 @@ footer{text-align:center;margin-top:28px;border-top:1px solid #1e2533;padding-to
 
         <div class="bottom-nav">
           <div class="nav-item active" onclick="showScreen('home')"><span class="nav-icon">🏠</span><span class="nav-label">Home</span></div>
-          <div class="nav-item" onclick="showScreen('route')"><span class="nav-icon">🗺️</span><span class="nav-label">Routes</span></div>
+          <div class="nav-item" onclick="showScreen('map')"><span class="nav-icon">🗺️</span><span class="nav-label">Map</span></div>
+          <div class="nav-item" onclick="showScreen('route')"><span class="nav-icon">🚌</span><span class="nav-label">Routes</span></div>
           <div class="nav-item" onclick="showScreen('alarm')"><span class="nav-icon">🔔</span><span class="nav-label">Alarms</span></div>
-          <div class="nav-item"><span class="nav-icon">⭐</span><span class="nav-label">Karma</span></div>
         </div>
       </div>
 
-      <!-- ════ SCREEN 2: LIVE ROUTE ════ -->
+      <!-- ════ SCREEN 2: GOOGLE MAPS VIEW ════ -->
+      <div id="screen-map" class="screen">
+        <div class="status-bar">
+          <span class="status-time" id="time-map">9:14</span>
+          <div class="status-icons"><span>▲▼ 4G</span><span>🔋</span></div>
+        </div>
+
+        <!-- Map header with filter chips -->
+        <div class="map-header">
+          <div class="map-header-top">
+            <button class="back-btn" style="color:#93c5fd" onclick="showScreen('home')">←</button>
+            <div>
+              <div class="map-title">Live Bus Map</div>
+              <div class="map-sub">ORR Corridor · 12 buses active</div>
+            </div>
+            <div class="offline-badge" style="margin-left:auto">
+              <div class="offline-dot"></div>
+              <span class="offline-text">Live</span>
+            </div>
+          </div>
+          <div class="map-filter-row">
+            <div class="filter-chip active-chip" onclick="toggleChip(this)">All Routes</div>
+            <div class="filter-chip" onclick="toggleChip(this)">500D</div>
+            <div class="filter-chip" onclick="toggleChip(this)">335E</div>
+            <div class="filter-chip" onclick="toggleChip(this)">KIA-9</div>
+            <div class="filter-chip" onclick="toggleChip(this)">201R</div>
+            <div class="filter-chip" onclick="toggleChip(this)">🟢 Seats Free</div>
+            <div class="filter-chip" onclick="toggleChip(this)">❄️ AC On</div>
+          </div>
+        </div>
+
+        <!-- Map fills remaining space -->
+        <div id="mapContainer">
+          <!-- API key input banner — hidden once key is loaded -->
+          <div class="api-banner" id="apiBanner">
+            <div class="api-banner-title">🗺️ Loading Google Maps…</div>
+            <div class="api-banner-body">Connecting to live Bengaluru bus data.</div>
+            <input type="text" id="apiKeyInput" value="AIzaSyB60wwaQGYnYXJvu0e5mt6lV0j70i8CxT4" style="display:none"/>
+          </div>
+
+          <!-- Static SVG fallback map shown before API key is entered -->
+          <div id="staticMapFallback">
+            <svg width="350" height="400" viewBox="0 0 350 400" xmlns="http://www.w3.org/2000/svg">
+              <!-- Background -->
+              <rect width="350" height="400" fill="#1a2035"/>
+              <!-- Grid lines (roads) -->
+              <line x1="0" y1="200" x2="350" y2="200" stroke="#2a3550" stroke-width="8"/>
+              <line x1="175" y1="0" x2="175" y2="400" stroke="#2a3550" stroke-width="8"/>
+              <line x1="0" y1="100" x2="350" y2="140" stroke="#1f2937" stroke-width="4"/>
+              <line x1="0" y1="280" x2="350" y2="310" stroke="#1f2937" stroke-width="4"/>
+              <line x1="80" y1="0" x2="100" y2="400" stroke="#1f2937" stroke-width="4"/>
+              <line x1="260" y1="0" x2="240" y2="400" stroke="#1f2937" stroke-width="4"/>
+              <!-- ORR label -->
+              <rect x="10" y="193" width="85" height="14" fill="#0f172a" rx="3"/>
+              <text x="14" y="204" fill="#60a5fa" font-size="9" font-family="sans-serif" font-weight="bold">Outer Ring Road</text>
+              <!-- Stops -->
+              <circle cx="90" cy="200" r="8" fill="#1d4ed8" stroke="#60a5fa" stroke-width="2"/>
+              <text x="98" y="195" fill="#e2e8f0" font-size="8" font-family="sans-serif">Silk Board</text>
+              <circle cx="175" cy="200" r="8" fill="#1d4ed8" stroke="#60a5fa" stroke-width="2"/>
+              <text x="183" y="195" fill="#e2e8f0" font-size="8" font-family="sans-serif">Marathahalli</text>
+              <circle cx="260" cy="200" r="8" fill="#1d4ed8" stroke="#60a5fa" stroke-width="2"/>
+              <text x="268" y="195" fill="#e2e8f0" font-size="8" font-family="sans-serif">KR Puram</text>
+              <!-- Bus A — Seats Free (green) -->
+              <g transform="translate(120,185)" class="bus-marker-a">
+                <rect x="-20" y="-12" width="40" height="24" rx="6" fill="#14532d" stroke="#22c55e" stroke-width="1.5"/>
+                <text x="0" y="4" text-anchor="middle" fill="#4ade80" font-size="9" font-family="sans-serif" font-weight="bold">🚌 500D</text>
+                <text x="0" y="14" text-anchor="middle" fill="#86efac" font-size="7" font-family="sans-serif">Seats Free</text>
+              </g>
+              <!-- Bus B — Packed (red) -->
+              <g transform="translate(210,215)">
+                <rect x="-20" y="-12" width="40" height="24" rx="6" fill="#7f1d1d" stroke="#ef4444" stroke-width="1.5"/>
+                <text x="0" y="4" text-anchor="middle" fill="#fca5a5" font-size="9" font-family="sans-serif" font-weight="bold">🚌 335E</text>
+                <text x="0" y="14" text-anchor="middle" fill="#fca5a5" font-size="7" font-family="sans-serif">Packed</text>
+              </g>
+              <!-- Bus C — Standing (yellow) -->
+              <g transform="translate(155,170)">
+                <rect x="-20" y="-12" width="40" height="24" rx="6" fill="#713f12" stroke="#f59e0b" stroke-width="1.5"/>
+                <text x="0" y="4" text-anchor="middle" fill="#fde68a" font-size="9" font-family="sans-serif" font-weight="bold">🚌 500D</text>
+                <text x="0" y="14" text-anchor="middle" fill="#fde68a" font-size="7" font-family="sans-serif">Standing</text>
+              </g>
+              <!-- User location -->
+              <circle cx="175" cy="200" r="14" fill="rgba(59,130,246,0.2)"/>
+              <circle cx="175" cy="200" r="6" fill="#3b82f6" stroke="#fff" stroke-width="2"/>
+              <!-- Legend bottom -->
+              <rect x="8" y="360" width="334" height="32" fill="#0f172a" rx="6"/>
+              <circle cx="22" cy="376" r="5" fill="#22c55e"/>
+              <text x="30" y="380" fill="#94a3b8" font-size="8" font-family="sans-serif">Seats Free</text>
+              <circle cx="88" cy="376" r="5" fill="#f59e0b"/>
+              <text x="96" y="380" fill="#94a3b8" font-size="8" font-family="sans-serif">Standing</text>
+              <circle cx="150" cy="376" r="5" fill="#ef4444"/>
+              <text x="158" y="380" fill="#94a3b8" font-size="8" font-family="sans-serif">Packed</text>
+              <circle cx="208" cy="376" r="6" fill="rgba(59,130,246,0.3)"/>
+              <circle cx="208" cy="376" r="3" fill="#3b82f6"/>
+              <text x="217" y="380" fill="#94a3b8" font-size="8" font-family="sans-serif">Your location</text>
+            </svg>
+            <div style="font-size:10px;color:#475569;text-align:center;padding:0 20px">Enter your Google Maps API key above to replace this preview with a live interactive map</div>
+          </div>
+
+          <!-- Google Map renders here (hidden until key loaded) -->
+          <div id="googleMap" style="display:none;width:100%;height:100%"></div>
+        </div>
+
+        <!-- Route list bottom sheet -->
+        <div style="background:#111827;padding:8px 16px 2px;border-top:1px solid #1f2937">
+          <div style="font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">BUSES NEAR YOU</div>
+          <div style="display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;scrollbar-width:none">
+            <div style="background:#1f2937;border:1px solid #22c55e33;border-radius:8px;padding:6px 10px;min-width:100px;flex-shrink:0;cursor:pointer" onclick="showScreen('route')">
+              <div style="font-size:11px;font-weight:800;color:#60a5fa">500D</div>
+              <div style="font-size:9px;color:#22c55e">Seats Free · 3 min</div>
+            </div>
+            <div style="background:#1f2937;border:1px solid #ef444433;border-radius:8px;padding:6px 10px;min-width:100px;flex-shrink:0;cursor:pointer">
+              <div style="font-size:11px;font-weight:800;color:#60a5fa">335E</div>
+              <div style="font-size:9px;color:#ef4444">Packed · 7 min</div>
+            </div>
+            <div style="background:#1f2937;border:1px solid #f59e0b33;border-radius:8px;padding:6px 10px;min-width:100px;flex-shrink:0;cursor:pointer">
+              <div style="font-size:11px;font-weight:800;color:#60a5fa">201R</div>
+              <div style="font-size:9px;color:#f59e0b">Standing · 5 min</div>
+            </div>
+            <div style="background:#1f2937;border:1px solid #22c55e33;border-radius:8px;padding:6px 10px;min-width:100px;flex-shrink:0;cursor:pointer">
+              <div style="font-size:11px;font-weight:800;color:#60a5fa">KIA-9</div>
+              <div style="font-size:9px;color:#22c55e">Seats Free · 12 min</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="bottom-nav">
+          <div class="nav-item" onclick="showScreen('home')"><span class="nav-icon">🏠</span><span class="nav-label">Home</span></div>
+          <div class="nav-item active" onclick="showScreen('map')"><span class="nav-icon">🗺️</span><span class="nav-label">Map</span></div>
+          <div class="nav-item" onclick="showScreen('route')"><span class="nav-icon">🚌</span><span class="nav-label">Routes</span></div>
+          <div class="nav-item" onclick="showScreen('alarm')"><span class="nav-icon">🔔</span><span class="nav-label">Alarms</span></div>
+        </div>
+      </div>
+
+      <!-- ════ SCREEN 3: LIVE ROUTE ════ -->
       <div id="screen-route" class="screen">
         <div class="status-bar">
-          <span class="status-time">9:15</span>
+          <span class="status-time" id="time-route">9:15</span>
           <div class="status-icons"><span>▲▼ 4G</span><span>🔋</span></div>
         </div>
         <div class="route-header">
@@ -276,7 +443,6 @@ footer{text-align:center;margin-top:28px;border-top:1px solid #1e2533;padding-to
         </div>
 
         <div class="timeline-wrap">
-          <!-- Passed stops -->
           <div class="timeline-stop">
             <div class="tl-left"><div class="stop-node passed"></div><div class="stop-line passed"></div></div>
             <div class="tl-right"><div class="sn muted">Silk Board Junction</div></div>
@@ -285,7 +451,6 @@ footer{text-align:center;margin-top:28px;border-top:1px solid #1e2533;padding-to
             <div class="tl-left"><div class="stop-node passed"></div><div class="stop-line passed"></div></div>
             <div class="tl-right"><div class="sn muted">Forum Mall</div></div>
           </div>
-          <!-- Bus A between stops -->
           <div class="timeline-stop">
             <div class="tl-left" style="justify-content:center"><div class="bus-icon">🚌</div><div class="stop-line passed"></div></div>
             <div class="tl-right">
@@ -296,7 +461,6 @@ footer{text-align:center;margin-top:28px;border-top:1px solid #1e2533;padding-to
               </div>
             </div>
           </div>
-          <!-- Current stop -->
           <div class="timeline-stop">
             <div class="tl-left"><div class="stop-node current"></div><div class="stop-line"></div></div>
             <div class="tl-right">
@@ -304,12 +468,10 @@ footer{text-align:center;margin-top:28px;border-top:1px solid #1e2533;padding-to
               <div class="stop-tags"><span class="st g">3 min ETA · Bus A</span></div>
             </div>
           </div>
-          <!-- Next stops -->
           <div class="timeline-stop">
             <div class="tl-left"><div class="stop-node"></div><div class="stop-line"></div></div>
             <div class="tl-right"><div class="sn">Koramangala BDA Complex</div><div class="stop-tags"><span class="st g">6 min ETA</span></div></div>
           </div>
-          <!-- Bus B between stops -->
           <div class="timeline-stop">
             <div class="tl-left" style="justify-content:center"><div class="bus-icon">🚌</div><div class="stop-line"></div></div>
             <div class="tl-right">
@@ -349,7 +511,6 @@ footer{text-align:center;margin-top:28px;border-top:1px solid #1e2533;padding-to
           <div class="spacer"></div>
         </div>
 
-        <!-- FAB + Drawer -->
         <button class="fab-btn" id="fabBtn" onclick="toggleDrawer()">📍</button>
         <div class="drawer-overlay" id="crowdDrawer">
           <div class="drawer-handle"></div>
@@ -389,16 +550,16 @@ footer{text-align:center;margin-top:28px;border-top:1px solid #1e2533;padding-to
 
         <div class="bottom-nav">
           <div class="nav-item" onclick="showScreen('home')"><span class="nav-icon">🏠</span><span class="nav-label">Home</span></div>
-          <div class="nav-item active" onclick="showScreen('route')"><span class="nav-icon">🗺️</span><span class="nav-label">Routes</span></div>
+          <div class="nav-item" onclick="showScreen('map')"><span class="nav-icon">🗺️</span><span class="nav-label">Map</span></div>
+          <div class="nav-item active" onclick="showScreen('route')"><span class="nav-icon">🚌</span><span class="nav-label">Routes</span></div>
           <div class="nav-item" onclick="showScreen('alarm')"><span class="nav-icon">🔔</span><span class="nav-label">Alarms</span></div>
-          <div class="nav-item"><span class="nav-icon">⭐</span><span class="nav-label">Karma</span></div>
         </div>
       </div>
 
-      <!-- ════ SCREEN 3: ALARM ════ -->
+      <!-- ════ SCREEN 4: ALARM ════ -->
       <div id="screen-alarm" class="screen">
         <div class="status-bar">
-          <span class="status-time">9:16</span>
+          <span class="status-time" id="time-alarm">9:16</span>
           <div class="status-icons"><span>▲▼ 4G</span><span>🔋</span></div>
         </div>
         <div class="alarm-header">
@@ -468,9 +629,9 @@ footer{text-align:center;margin-top:28px;border-top:1px solid #1e2533;padding-to
 
         <div class="bottom-nav">
           <div class="nav-item" onclick="showScreen('home')"><span class="nav-icon">🏠</span><span class="nav-label">Home</span></div>
-          <div class="nav-item" onclick="showScreen('route')"><span class="nav-icon">🗺️</span><span class="nav-label">Routes</span></div>
+          <div class="nav-item" onclick="showScreen('map')"><span class="nav-icon">🗺️</span><span class="nav-label">Map</span></div>
+          <div class="nav-item" onclick="showScreen('route')"><span class="nav-icon">🚌</span><span class="nav-label">Routes</span></div>
           <div class="nav-item active" onclick="showScreen('alarm')"><span class="nav-icon">🔔</span><span class="nav-label">Alarms</span></div>
-          <div class="nav-item"><span class="nav-icon">⭐</span><span class="nav-label">Karma</span></div>
         </div>
       </div>
 
@@ -484,18 +645,48 @@ footer{text-align:center;margin-top:28px;border-top:1px solid #1e2533;padding-to
     <div class="legend-section">
       <h3>Screens</h3>
       <button class="screen-nav-btn active-btn" id="btn-home" onclick="showScreen('home')">🏠 Home / Route Search</button>
-      <button class="screen-nav-btn" id="btn-route" onclick="showScreen('route')">🗺️ Live Route View (500D)</button>
+      <button class="screen-nav-btn" id="btn-map" onclick="showScreen('map')">🗺️ Live Map (Google Maps)</button>
+      <button class="screen-nav-btn" id="btn-route" onclick="showScreen('route')">🚌 Live Route View (500D)</button>
       <button class="screen-nav-btn" id="btn-alarm" onclick="showScreen('alarm')">🔔 Stop Wake-Up Alarm</button>
+    </div>
+
+    <div class="api-instruction">
+      <h3>🗺️ Google Maps Free API Key</h3>
+      <div class="api-step">
+        <div class="api-step-num">1</div>
+        <span>Go to <a href="https://console.cloud.google.com" target="_blank">console.cloud.google.com</a> → Sign in with Google</span>
+      </div>
+      <div class="api-step">
+        <div class="api-step-num">2</div>
+        <span>Create a new project → Click <strong style="color:#e2e8f0">APIs &amp; Services → Library</strong></span>
+      </div>
+      <div class="api-step">
+        <div class="api-step-num">3</div>
+        <span>Search &amp; enable <strong style="color:#e2e8f0">Maps JavaScript API</strong></span>
+      </div>
+      <div class="api-step">
+        <div class="api-step-num">4</div>
+        <span>Go to <strong style="color:#e2e8f0">Credentials → Create API Key</strong>. Restrict to your domain for safety</span>
+      </div>
+      <div class="api-step">
+        <div class="api-step-num">5</div>
+        <span>Free tier: <strong style="color:#22c55e">$200/month credit</strong> = ~28,000 map loads free</span>
+      </div>
+      <div class="api-step">
+        <div class="api-step-num">6</div>
+        <span>Paste key in the <strong style="color:#e2e8f0">Map screen</strong> → tap <em>Load Live Map</em></span>
+      </div>
     </div>
 
     <div class="legend-section">
       <h3>Interactions</h3>
       <div style="font-size:11px;color:#94a3b8;line-height:1.9">
         <div>→ Tap <strong style="color:#e2e8f0">nearby stop card</strong> to open route view</div>
-        <div>→ Tap <strong style="color:#e2e8f0">📍 FAB button</strong> to open crowd-report drawer</div>
+        <div>→ Tap <strong style="color:#e2e8f0">BTM 2nd Stage</strong> card to open map</div>
+        <div>→ Tap <strong style="color:#e2e8f0">filter chips</strong> on map to filter routes</div>
+        <div>→ Tap <strong style="color:#e2e8f0">📍 FAB button</strong> for crowd-report drawer</div>
         <div>→ Select <strong style="color:#e2e8f0">status tags</strong> and tap Submit</div>
         <div>→ Tap <strong style="color:#e2e8f0">"Set Alarm"</strong> on Marathahalli stop</div>
-        <div>→ Toggle stops on the alarm screen</div>
         <div>→ Tap <strong style="color:#e2e8f0">"Test Vibration"</strong> for feedback</div>
       </div>
     </div>
@@ -513,6 +704,7 @@ footer{text-align:center;margin-top:28px;border-top:1px solid #1e2533;padding-to
       <h3>Key UVPs</h3>
       <div style="font-size:11px;color:#94a3b8;line-height:1.9">
         <div>✅ <strong style="color:#e2e8f0">100% offline GTFS</strong> — no data needed</div>
+        <div>✅ <strong style="color:#e2e8f0">Google Maps live layer</strong> — bus markers on real map</div>
         <div>✅ <strong style="color:#e2e8f0">Live crowd/AC tags</strong> with 20-min decay</div>
         <div>✅ <strong style="color:#e2e8f0">Cell-tower 2-stop alarm</strong> — works in dead zones</div>
         <div>✅ <strong style="color:#e2e8f0">Karma points</strong> — gamified crowdsourcing loop</div>
@@ -525,11 +717,52 @@ footer{text-align:center;margin-top:28px;border-top:1px solid #1e2533;padding-to
 <footer>Made with IBM Bob</footer>
 
 <script>
-var drawerOpen = false;
-var submitDone = false;
+// ── State ─────────────────────────────────────────────────────────────────────
+var drawerOpen  = false;
+var submitDone  = false;
+var mapLoaded   = false;
+var gMap        = null;
+var gMarkers    = [];
 
+// Live bus data for the map (simulated crowdsourced clusters)
+var busClusters = [
+  { routeId:'500D', lat:12.9178, lng:77.6230, crowd:'Seats Free',  crowdClass:'g', acOk:true,  conf:0.94, label:'Bus A' },
+  { routeId:'500D', lat:12.9199, lng:77.6300, crowd:'Standing',    crowdClass:'y', acOk:false, conf:0.82, label:'Bus B' },
+  { routeId:'335E', lat:12.9220, lng:77.6180, crowd:'Packed',      crowdClass:'r', acOk:false, conf:0.78, label:'Bus C' },
+  { routeId:'KIA-9',lat:12.9165, lng:77.6101, crowd:'Seats Free',  crowdClass:'g', acOk:true,  conf:0.91, label:'Bus D' },
+  { routeId:'201R', lat:12.9240, lng:77.6350, crowd:'Standing',    crowdClass:'y', acOk:true,  conf:0.75, label:'Bus E' },
+];
+
+// BMTC stop coordinates (ORR corridor — approximate real lat/lng)
+var bmtcStops = [
+  { name:'Silk Board Junction',      lat:12.9165, lng:77.6101 },
+  { name:'Forum Mall',               lat:12.9185, lng:77.6155 },
+  { name:'Koramangala 1st Block',    lat:12.9200, lng:77.6198 },
+  { name:'Koramangala BDA Complex',  lat:12.9215, lng:77.6230 },
+  { name:'Sony World Signal',        lat:12.9230, lng:77.6265 },
+  { name:'Domlur Flyover',           lat:12.9270, lng:77.6310 },
+  { name:'Indiranagar CMH Road',     lat:12.9300, lng:77.6360 },
+  { name:'Marathahalli Bridge',      lat:12.9340, lng:77.7006 },
+  { name:'Spice Garden Signal',      lat:12.9365, lng:77.7050 },
+  { name:'KR Puram Bus Stand',       lat:12.9975, lng:77.6956 },
+];
+
+// ── Clock ─────────────────────────────────────────────────────────────────────
+function updateClock() {
+  var now = new Date();
+  var h = now.getHours(), m = now.getMinutes();
+  var t = h + ':' + (m < 10 ? '0' + m : m);
+  ['home','map','route','alarm'].forEach(function(s) {
+    var el = document.getElementById('time-' + s);
+    if (el) el.textContent = t;
+  });
+}
+updateClock();
+setInterval(updateClock, 10000);
+
+// ── Screen navigation ─────────────────────────────────────────────────────────
 function showScreen(name) {
-  document.querySelectorAll('.screen').forEach(function(s){ s.classList.remove('active'); });
+  document.querySelectorAll('.screen').forEach(function(s) { s.classList.remove('active'); });
   var el = document.getElementById('screen-' + name);
   if (el) el.classList.add('active');
   if (name !== 'route') {
@@ -537,21 +770,186 @@ function showScreen(name) {
     if (d) d.classList.remove('open');
     drawerOpen = false;
   }
-  document.querySelectorAll('.screen-nav-btn').forEach(function(b){ b.classList.remove('active-btn'); });
+  document.querySelectorAll('.screen-nav-btn').forEach(function(b) { b.classList.remove('active-btn'); });
   var ab = document.getElementById('btn-' + name);
   if (ab) ab.classList.add('active-btn');
   var ps = document.querySelector('.phone-screen');
   if (ps) ps.scrollTop = 0;
+
+  // Trigger map resize if switching to map screen and map is loaded
+  if (name === 'map' && gMap) {
+    setTimeout(function() {
+      google.maps.event.trigger(gMap, 'resize');
+      gMap.setCenter({ lat: 12.9220, lng: 77.6250 });
+    }, 100);
+  }
 }
 
+// ── Map filter chips ─────────────────────────────────────────────────────────
+function toggleChip(el) {
+  el.classList.toggle('active-chip');
+}
+
+// ── API key handling ──────────────────────────────────────────────────────────
+function onApiKeyInput(val) {
+  var btn = document.querySelector('.api-banner-btn');
+  if (btn) btn.style.opacity = val.length > 10 ? '1' : '0.5';
+}
+
+function loadGoogleMap() {
+  var key = document.getElementById('apiKeyInput').value.trim();
+  if (!key || key.length < 15) {
+    alert('Please paste a valid Google Maps API key (starts with AIzaSy…)');
+    return;
+  }
+  // Store key for reuse
+  try { localStorage.setItem('buselli_maps_key', key); } catch(e) {}
+  injectMapsScript(key);
+}
+
+function injectMapsScript(key) {
+  if (document.getElementById('gmaps-script')) return; // already injected
+  var s = document.createElement('script');
+  s.id  = 'gmaps-script';
+  s.src = 'https://maps.googleapis.com/maps/api/js?key=' + encodeURIComponent(key) + '&callback=initGoogleMap&libraries=marker';
+  s.async = true;
+  s.onerror = function() {
+    alert('Failed to load Google Maps. Check your API key and ensure "Maps JavaScript API" is enabled in Google Cloud Console.');
+  };
+  document.head.appendChild(s);
+}
+
+// Called by Google Maps SDK once loaded
+window.initGoogleMap = function() {
+  mapLoaded = true;
+  document.getElementById('apiBanner').style.display       = 'none';
+  document.getElementById('staticMapFallback').style.display = 'none';
+  var mapDiv = document.getElementById('googleMap');
+  mapDiv.style.display = 'block';
+
+  // Dark mode map style matching the app dark theme
+  var darkStyle = [
+    { elementType: 'geometry',         stylers: [{ color: '#1a2035' }] },
+    { elementType: 'labels.text.fill', stylers: [{ color: '#8898aa' }] },
+    { elementType: 'labels.text.stroke',stylers:[{ color: '#1a2035' }] },
+    { featureType: 'road',             elementType: 'geometry', stylers: [{ color: '#283046' }] },
+    { featureType: 'road',             elementType: 'geometry.stroke', stylers: [{ color: '#212a37' }] },
+    { featureType: 'road',             elementType: 'labels.text.fill', stylers: [{ color: '#9ca5b3' }] },
+    { featureType: 'road.highway',     elementType: 'geometry', stylers: [{ color: '#746855' }] },
+    { featureType: 'road.highway',     elementType: 'geometry.stroke', stylers: [{ color: '#1f2835' }] },
+    { featureType: 'road.highway',     elementType: 'labels.text.fill', stylers: [{ color: '#f3d19c' }] },
+    { featureType: 'transit',          elementType: 'geometry', stylers: [{ color: '#2f3948' }] },
+    { featureType: 'water',            elementType: 'geometry', stylers: [{ color: '#17263c' }] },
+    { featureType: 'poi',              stylers: [{ visibility: 'off' }] },
+    { featureType: 'administrative',   elementType: 'geometry', stylers: [{ color: '#57606a' }] },
+  ];
+
+  gMap = new google.maps.Map(mapDiv, {
+    center:            { lat: 12.9220, lng: 77.6250 },
+    zoom:              14,
+    styles:            darkStyle,
+    disableDefaultUI:  true,
+    zoomControl:       true,
+    gestureHandling:   'greedy',
+    mapTypeId:         'roadmap',
+  });
+
+  // Drop BMTC stop markers
+  bmtcStops.forEach(function(stop) {
+    new google.maps.Marker({
+      position: { lat: stop.lat, lng: stop.lng },
+      map:      gMap,
+      title:    stop.name,
+      icon: {
+        path:        google.maps.SymbolPath.CIRCLE,
+        scale:       6,
+        fillColor:   '#1d4ed8',
+        fillOpacity: 1,
+        strokeColor: '#60a5fa',
+        strokeWeight: 1.5,
+      },
+    });
+  });
+
+  // Drop live bus cluster markers
+  var crowdColors = { g: '#22c55e', y: '#f59e0b', r: '#ef4444' };
+  busClusters.forEach(function(bus) {
+    var color = crowdColors[bus.crowdClass] || '#22c55e';
+    var infoContent =
+      '<div style="background:#1f2937;color:#e2e8f0;padding:10px 12px;border-radius:8px;font-family:sans-serif;min-width:140px">' +
+        '<div style="font-size:13px;font-weight:800;color:#60a5fa;margin-bottom:4px">🚌 Route ' + bus.routeId + ' — ' + bus.label + '</div>' +
+        '<div style="font-size:11px;color:' + color + ';margin-bottom:2px">● ' + bus.crowd + '</div>' +
+        '<div style="font-size:10px;color:#94a3b8">' + (bus.acOk ? '❄️ AC On' : '🌡️ AC Off') + ' · Conf ' + Math.round(bus.conf * 100) + '%</div>' +
+      '</div>';
+    var infoWindow = new google.maps.InfoWindow({ content: infoContent });
+    var marker = new google.maps.Marker({
+      position: { lat: bus.lat, lng: bus.lng },
+      map:      gMap,
+      title:    bus.routeId + ' — ' + bus.crowd,
+      icon: {
+        path:        google.maps.SymbolPath.FORWARD_CLOSED_ARROW,
+        scale:       7,
+        fillColor:   color,
+        fillOpacity: 1,
+        strokeColor: '#fff',
+        strokeWeight: 1,
+        rotation:    90,
+      },
+      zIndex: 10,
+    });
+    marker.addListener('click', function() {
+      gMarkers.forEach(function(m) { if (m.infoWindow) m.infoWindow.close(); });
+      infoWindow.open(gMap, marker);
+    });
+    marker.infoWindow = infoWindow;
+    gMarkers.push(marker);
+  });
+
+  // Draw route 500D polyline
+  var route500D = bmtcStops.slice(0, 10).map(function(s) { return { lat: s.lat, lng: s.lng }; });
+  new google.maps.Polyline({
+    path:          route500D,
+    strokeColor:   '#3b82f6',
+    strokeOpacity: 0.8,
+    strokeWeight:  3,
+    map:           gMap,
+  });
+
+  // User location blue dot
+  if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(function(pos) {
+      var userPos = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+      new google.maps.Marker({
+        position: userPos,
+        map:      gMap,
+        title:    'Your Location',
+        icon: {
+          path:        google.maps.SymbolPath.CIRCLE,
+          scale:       8,
+          fillColor:   '#3b82f6',
+          fillOpacity: 1,
+          strokeColor: '#fff',
+          strokeWeight: 2,
+        },
+        zIndex: 20,
+      });
+      gMap.setCenter(userPos);
+    }, function() {
+      // Geolocation denied — stay at default Bengaluru ORR center
+    });
+  }
+};
+
+// ── Auto-load the integrated demo API key on page load ────────────────────────
+(function() {
+  injectMapsScript('AIzaSyB60wwaQGYnYXJvu0e5mt6lV0j70i8CxT4');
+})();
+
+// ── Crowd drawer ──────────────────────────────────────────────────────────────
 function toggleDrawer() {
   var d = document.getElementById('crowdDrawer');
   drawerOpen = !drawerOpen;
-  if (drawerOpen) {
-    d.classList.add('open');
-  } else {
-    d.classList.remove('open');
-  }
+  d.classList[drawerOpen ? 'add' : 'remove']('open');
 }
 
 function toggleTag(id) {
@@ -563,25 +961,26 @@ function submitReport() {
   if (submitDone) return;
   submitDone = true;
   var btn = document.getElementById('submitBtn');
-  btn.textContent = '✅ Live Status Shared! +5 ⭐';
+  btn.textContent   = '✅ Live Status Shared! +5 ⭐';
   btn.style.background = '#059669';
   setTimeout(function() {
     var d = document.getElementById('crowdDrawer');
     d.classList.remove('open');
-    drawerOpen = false;
-    submitDone = false;
-    btn.textContent = '📡 Share Live Status';
+    drawerOpen    = false;
+    submitDone    = false;
+    btn.textContent   = '📡 Share Live Status';
     btn.style.background = '#1d4ed8';
   }, 2200);
 }
 
+// ── Vibration alarm test ──────────────────────────────────────────────────────
 function testVibe() {
   var btn = document.getElementById('vibeBtn');
-  btn.textContent = '📳 Alarm Triggered at Domlur!';
-  btn.style.background = 'rgba(99,102,241,.5)';
+  btn.textContent        = '📳 Alarm Triggered at Domlur!';
+  btn.style.background   = 'rgba(99,102,241,.5)';
   if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
   setTimeout(function() {
-    btn.textContent = '📳 Test Vibration';
+    btn.textContent      = '📳 Test Vibration';
     btn.style.background = 'rgba(255,255,255,.1)';
   }, 2500);
 }
