@@ -7,6 +7,19 @@
  *   stop:eta:{stopId}:{routeId} ZSET   TTL = 90s  (score = ETA epoch seconds)
  *
  * All writes go through this single class so TTLs are always applied consistently.
+ *
+ * Bug 4 fix — atomicReplaceRoute:
+ *   The original flushRoute + N×putCluster sequence was NOT atomic.  A concurrent
+ *   putCluster from another worker between the SMEMBERS read and the DEL pipeline
+ *   would leave a ghost cluster ID in route:buses:{routeId} forever.
+ *   atomicReplaceRoute uses a Lua script that runs entirely server-side in a single
+ *   Redis round-trip: it DELs all old bus:pos hashes, DELs the route set, then
+ *   writes all new hashes and rebuilds the set — all inside one EVAL call.
+ *
+ * Bug 7 fix — SET TTL:
+ *   putCluster used to call EXPIRE on route:buses:{routeId} on every write, so
+ *   writing 20 clusters in a loop reset the TTL 20 times.  atomicReplaceRoute sets
+ *   the TTL exactly once after all members are added.
  */
 import { makeConfidenceScore } from '../eta/types.js';
 import type { Redis } from 'ioredis';
@@ -16,13 +29,100 @@ import type { LiveCluster } from './spatial-clustering-service.js';
 export const BUS_CLUSTER_TTL_SECONDS = 300;
 export const STOP_ETA_TTL_SECONDS    = 90;
 
+/**
+ * Lua script for atomic route replacement (Bug 4 + Bug 7 fix).
+ *
+ * KEYS[1]  = route:buses:{routeId}  (the SET tracking cluster IDs)
+ * ARGV[1]  = TTL in seconds (BUS_CLUSTER_TTL_SECONDS)
+ * ARGV[2]  = JSON-encoded array of cluster objects to write
+ *
+ * The script:
+ *   1. Reads the current member set (old cluster IDs).
+ *   2. DELs every old bus:pos hash.
+ *   3. DELs the route set itself.
+ *   4. For each new cluster: HMSETs the hash and EXPIREs it.
+ *   5. SADDs all new cluster IDs into the route set and EXPIREs it ONCE.
+ */
+const ATOMIC_REPLACE_LUA = `
+local routeKey = KEYS[1]
+local ttl      = tonumber(ARGV[1])
+local clusters = cjson.decode(ARGV[2])
+
+-- 1. Remove old cluster hashes
+local oldIds = redis.call('SMEMBERS', routeKey)
+for _, id in ipairs(oldIds) do
+  redis.call('DEL', 'bus:pos:' .. id)
+end
+
+-- 2. Remove the route set
+redis.call('DEL', routeKey)
+
+-- 3. Write new cluster hashes and rebuild the set
+for _, c in ipairs(clusters) do
+  local posKey = 'bus:pos:' .. c.clusterId
+  redis.call('HSET', posKey,
+    'clusterId',    c.clusterId,
+    'routeId',      c.routeId,
+    'lat',          c.lat,
+    'lng',          c.lng,
+    'speedKmh',     c.speedKmh,
+    'confidence',   c.confidence,
+    'riderCount',   c.riderCount,
+    'updatedAt',    c.updatedAt,
+    'nearestStopId', c.nearestStopId
+  )
+  redis.call('EXPIRE', posKey, ttl)
+  redis.call('SADD', routeKey, c.clusterId)
+end
+
+-- 4. Set TTL on the route set ONCE (Bug 7 fix)
+if #clusters > 0 then
+  redis.call('EXPIRE', routeKey, ttl)
+end
+
+return #clusters
+`;
+
 export class RedisClusterStore {
   constructor(private readonly redis: Redis) {}
 
   /**
-   * Writes a cluster to Redis.
-   * Sets bus:pos:{clusterId} as a HASH and adds the clusterId to
-   * route:buses:{routeId} SET.  Both keys get refreshed TTLs.
+   * Atomically replaces all clusters for a route in a single Lua EVAL.
+   *
+   * Replaces the former flushRoute + N×putCluster sequence.  Uses a Lua
+   * script so the DEL-old / write-new sequence cannot be interleaved by
+   * concurrent workers (Bug 4 fix).  The route SET TTL is set exactly once
+   * after all members are added (Bug 7 fix).
+   */
+  async atomicReplaceRoute(routeId: string, clusters: readonly LiveCluster[]): Promise<void> {
+    const routeKey = `route:buses:${routeId}`;
+    const payload  = clusters.map((c) => ({
+      clusterId:    c.clusterId,
+      routeId:      c.routeId,
+      lat:          String(c.lat),
+      lng:          String(c.lng),
+      speedKmh:     String(c.speedKmh),
+      confidence:   String(c.confidence),
+      riderCount:   String(c.riderCount),
+      updatedAt:    c.updatedAt.toISOString(),
+      nearestStopId: c.nearestStopId ?? '',
+    }));
+    await (this.redis as Redis & { eval: (...a: unknown[]) => Promise<unknown> }).eval(
+      ATOMIC_REPLACE_LUA,
+      1,
+      routeKey,
+      String(BUS_CLUSTER_TTL_SECONDS),
+      JSON.stringify(payload),
+    );
+  }
+
+  /**
+   * Writes a single cluster to Redis (kept for ad-hoc / test use).
+   * For production batch writes, prefer atomicReplaceRoute.
+   *
+   * Bug 7 partial note: this method still refreshes the route SET TTL on
+   * every call.  Use atomicReplaceRoute when writing multiple clusters for
+   * the same route to avoid the TTL-reset churn.
    */
   async putCluster(cluster: LiveCluster): Promise<void> {
     const posKey   = `bus:pos:${cluster.clusterId}`;
@@ -31,19 +131,20 @@ export class RedisClusterStore {
     const pipeline = this.redis.pipeline();
 
     pipeline.hset(posKey, {
-      clusterId:   cluster.clusterId,
-      routeId:     cluster.routeId,
-      lat:         String(cluster.lat),
-      lng:         String(cluster.lng),
-      speedKmh:    String(cluster.speedKmh),
-      confidence:  String(cluster.confidence),
-      riderCount:  String(cluster.riderCount),
-      updatedAt:   cluster.updatedAt.toISOString(),
+      clusterId:    cluster.clusterId,
+      routeId:      cluster.routeId,
+      lat:          String(cluster.lat),
+      lng:          String(cluster.lng),
+      speedKmh:     String(cluster.speedKmh),
+      confidence:   String(cluster.confidence),
+      riderCount:   String(cluster.riderCount),
+      updatedAt:    cluster.updatedAt.toISOString(),
       nearestStopId: cluster.nearestStopId ?? '',
     });
     pipeline.expire(posKey, BUS_CLUSTER_TTL_SECONDS);
 
     pipeline.sadd(routeKey, cluster.clusterId);
+    // Note: single-cluster write still refreshes the SET TTL once — acceptable.
     pipeline.expire(routeKey, BUS_CLUSTER_TTL_SECONDS);
 
     await pipeline.exec();
@@ -136,7 +237,11 @@ export class RedisClusterStore {
       .exec();
   }
 
-  /** Removes all data for a route (used in tests and re-ingest). */
+  /**
+   * Removes all data for a route (used in tests and manual admin operations).
+   * Production code should use atomicReplaceRoute instead — it handles
+   * flush + write atomically without a separate flushRoute call.
+   */
   async flushRoute(routeId: string): Promise<void> {
     const ids = await this.redis.smembers(`route:buses:${routeId}`);
     const pipeline = this.redis.pipeline();

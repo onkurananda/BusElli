@@ -1,6 +1,6 @@
 /**
  * Tests for SpatialClusteringService — 50 m radius, same-route constraint,
- * Redis TTL eviction, and confidence scoring.
+ * Redis TTL eviction, confidence scoring, deterministic IDs, and performance fixes.
  *
  * Uses an in-memory fake for RedisClusterStore to avoid external dependencies.
  */
@@ -24,31 +24,37 @@ function offsetLat(lat: number, meters: number): number {
 
 function makePoint(overrides: Partial<RawTelemetryPoint> = {}): RawTelemetryPoint {
   return {
-    sessionId:     'session-001',
-    routeId:       '500D',
-    lat:           12.9165,
-    lng:           77.6101,
+    sessionId:      'session-001',
+    routeId:        '500D',
+    lat:            12.9165,
+    lng:            77.6101,
     accuracyMeters: 15,
-    speedKmh:      22,
-    capturedAt:    new Date('2024-08-15T07:00:00.000Z'),
+    speedKmh:       22,
+    capturedAt:     new Date('2024-08-15T07:00:00.000Z'),
     ...overrides,
   };
 }
 
-/** Minimal in-memory Redis store fake. */
-function makeStoreFake(): RedisClusterStore & { written: LiveCluster[]; flushed: string[] } {
-  const written: LiveCluster[] = [];
+/** Minimal in-memory Redis store fake — now tracks atomicReplaceRoute calls. */
+function makeStoreFake(): RedisClusterStore & {
+  replaced: Array<{ routeId: string; clusters: readonly LiveCluster[] }>;
+  flushed:  string[];
+} {
+  const replaced: Array<{ routeId: string; clusters: readonly LiveCluster[] }> = [];
   const flushed: string[] = [];
   return {
-    written,
+    replaced,
     flushed,
-    putCluster:     vi.fn(async (c: LiveCluster) => { written.push(c); }),
-    removeCluster:  vi.fn(),
-    flushRoute:     vi.fn(async (r: string) => { flushed.push(r); }),
-    getCluster:     vi.fn().mockResolvedValue(null),
-    getClustersForRoute: vi.fn().mockResolvedValue([]),
+    atomicReplaceRoute: vi.fn(async (routeId: string, clusters: readonly LiveCluster[]) => {
+      replaced.push({ routeId, clusters });
+    }),
+    putCluster:            vi.fn(),
+    removeCluster:         vi.fn(),
+    flushRoute:            vi.fn(async (r: string) => { flushed.push(r); }),
+    getCluster:            vi.fn().mockResolvedValue(null),
+    getClustersForRoute:   vi.fn().mockResolvedValue([]),
     getClusterIdsForRoute: vi.fn().mockResolvedValue([]),
-    putStopEta:     vi.fn(),
+    putStopEta:            vi.fn(),
   } as unknown as ReturnType<typeof makeStoreFake>;
 }
 
@@ -138,25 +144,20 @@ describe('SpatialClusteringService.clusterPoints', () => {
     expect(result.map((c) => c.routeId).sort()).toEqual(['335E', '500D']);
   });
 
-  it('filters out points with speed > 80 km/h before clustering', () => {
+  /**
+   * Bug 6 regression: clusterPoints no longer runs isValid internally.
+   * The caller (_doRefreshForRoute) pre-filters.  When called directly
+   * with invalid points they pass through — this is intentional (caller
+   * responsibility).  Verify the old duplicate filter is GONE by checking
+   * that clusterPoints does NOT silently drop invalid points.
+   */
+  it('does not silently filter invalid points when called directly (caller responsibility)', () => {
     const svc = new SpatialClusteringService(makeDeps([]));
     const points: RawTelemetryPoint[] = [
-      makePoint({ speedKmh: 22 }),  // valid
-      makePoint({ speedKmh: 90 }),  // rejected — flyover drift
+      makePoint({ speedKmh: 90 }),  // would be filtered by isValid — but clusterPoints no longer does it
     ];
 
-    const result = svc.clusterPoints(points);
-    expect(result).toHaveLength(1);
-    expect(result[0]?.riderCount).toBe(1);
-  });
-
-  it('filters out points with accuracy > 50 m before clustering', () => {
-    const svc = new SpatialClusteringService(makeDeps([]));
-    const points: RawTelemetryPoint[] = [
-      makePoint({ accuracyMeters: 15 }),  // valid
-      makePoint({ accuracyMeters: 55 }),  // too noisy for 50 m clustering
-    ];
-
+    // clusterPoints should return 1 cluster (the invalid point is clustered as-is)
     const result = svc.clusterPoints(points);
     expect(result).toHaveLength(1);
   });
@@ -190,13 +191,18 @@ describe('SpatialClusteringService.clusterPoints', () => {
     expect(cluster?.lng).toBeCloseTo(77.6001, 3);
   });
 
-  it('produces the same clusterId for the same route + same position on re-run (stable ID)', () => {
-    const svc = new SpatialClusteringService(makeDeps([]));
+  /**
+   * Bug 3 regression: deterministicId must NOT embed Date.now().
+   * The same route + same quantised position must produce the identical
+   * full cluster ID on every call, not just the first segment.
+   */
+  it('produces the identical full clusterId on re-run for the same position (Bug 3 fix)', () => {
+    const svc   = new SpatialClusteringService(makeDeps([]));
     const point = makePoint();
     const [first]  = svc.clusterPoints([point]);
     const [second] = svc.clusterPoints([point]);
-    // Deterministic ID: same route + same quantised position → same first segment
-    expect(first?.clusterId.split('-')[0]).toBe(second?.clusterId.split('-')[0]);
+    // Full ID must be stable — not just the first segment
+    expect(first?.clusterId).toBe(second?.clusterId);
   });
 
   it('produces different clusterIds for buses on the same route but 60 m apart', () => {
@@ -208,66 +214,154 @@ describe('SpatialClusteringService.clusterPoints', () => {
     expect(result).toHaveLength(2);
     expect(result[0]?.clusterId).not.toBe(result[1]?.clusterId);
   });
+
+  /**
+   * Bug 8 regression: grid-cell pre-filter must still produce correct clustering
+   * results for a large set of densely packed points (500 points in 3 clusters).
+   */
+  it('correctly clusters 500 points across 3 known bus positions (grid-cell pre-filter correctness)', () => {
+    const svc = new SpatialClusteringService(makeDeps([]));
+
+    // Bus A at stop 1 — 200 riders within 40 m
+    const busA = Array.from({ length: 200 }, (_, i) =>
+      makePoint({ lat: 12.9165 + (i % 10) * 0.00001, lng: 77.6101 }),
+    );
+    // Bus B at stop 2, 500 m north — 200 riders within 40 m
+    const busB = Array.from({ length: 200 }, (_, i) =>
+      makePoint({ lat: 12.9210 + (i % 10) * 0.00001, lng: 77.6101 }),
+    );
+    // Bus C at stop 3, further north — 100 riders
+    const busC = Array.from({ length: 100 }, (_, i) =>
+      makePoint({ lat: 12.9300 + (i % 5) * 0.00001, lng: 77.6101 }),
+    );
+
+    const result = svc.clusterPoints([...busA, ...busB, ...busC]);
+
+    // Should produce exactly 3 clusters — one per bus location
+    expect(result).toHaveLength(3);
+    const totalRiders = result.reduce((s, c) => s + c.riderCount, 0);
+    expect(totalRiders).toBe(500);
+  });
 });
 
 // ── SpatialClusteringService.refreshForRoute ──────────────────────────────────
 
 describe('SpatialClusteringService.refreshForRoute', () => {
-  it('calls getRecentTelemetry and writes clusters to Redis', async () => {
+  it('calls getRecentTelemetry and writes clusters via atomicReplaceRoute', async () => {
     const points = [
       makePoint({ lat: 12.9165, lng: 77.6101 }),
       makePoint({ lat: offsetLat(12.9165, 20), lng: 77.6101 }),
     ];
     const deps = makeDeps(points);
-    const svc = new SpatialClusteringService(deps);
+    const svc  = new SpatialClusteringService(deps);
 
     const count = await svc.refreshForRoute('500D');
 
     expect(count).toBe(1);
-    expect(deps.store.written).toHaveLength(1);
-    expect(deps.store.written[0]?.routeId).toBe('500D');
-    expect(deps.store.flushed).toContain('500D');
+    expect(deps.store.atomicReplaceRoute).toHaveBeenCalledOnce();
+    expect(deps.store.atomicReplaceRoute).toHaveBeenCalledWith(
+      '500D',
+      expect.arrayContaining([expect.objectContaining({ routeId: '500D' })]),
+    );
+    // Legacy flushRoute + putCluster should NOT be called by the new code path
+    expect(deps.store.flushRoute).not.toHaveBeenCalled();
+    expect(deps.store.putCluster).not.toHaveBeenCalled();
   });
 
   it('returns 0 and writes nothing when there are no valid points for a route', async () => {
     const deps = makeDeps([]);
-    const svc = new SpatialClusteringService(deps);
+    const svc  = new SpatialClusteringService(deps);
 
     const count = await svc.refreshForRoute('500D');
 
     expect(count).toBe(0);
-    expect(deps.store.written).toHaveLength(0);
+    expect(deps.store.atomicReplaceRoute).not.toHaveBeenCalled();
   });
 
-  it('calls flushRoute before writing new clusters to avoid stale state', async () => {
-    const points = [makePoint()];
-    const callOrder: string[] = [];
+  /**
+   * refreshForRoute must still filter via isValid before clustering —
+   * it pre-filters, then passes only valid points to clusterPoints.
+   */
+  it('pre-filters invalid points (speed, accuracy) before calling clusterPoints', async () => {
+    const points = [
+      makePoint({ speedKmh: 22 }),   // valid
+      makePoint({ speedKmh: 90 }),   // rejected — flyover
+      makePoint({ accuracyMeters: 55 }), // rejected — too noisy
+    ];
     const deps = makeDeps(points);
-    const svc = new SpatialClusteringService(deps);
+    const svc  = new SpatialClusteringService(deps);
 
-    // Override the fakes to record global call order
-    (deps.store.flushRoute as ReturnType<typeof vi.fn>).mockImplementation(async (r: string) => {
-      callOrder.push(`flush:${r}`);
-    });
-    (deps.store.putCluster as ReturnType<typeof vi.fn>).mockImplementation(async (c: LiveCluster) => {
-      callOrder.push(`write:${c.routeId}`);
-    });
+    const count = await svc.refreshForRoute('500D');
 
-    await svc.refreshForRoute('500D');
-
-    const flushIdx = callOrder.indexOf('flush:500D');
-    const writeIdx = callOrder.indexOf('write:500D');
-    expect(flushIdx).toBeGreaterThanOrEqual(0);
-    expect(writeIdx).toBeGreaterThanOrEqual(0);
-    expect(flushIdx).toBeLessThan(writeIdx);
+    // Only 1 valid point → 1 single-rider cluster
+    expect(count).toBe(1);
+    const replaced = (deps.store.replaced as Array<{ routeId: string; clusters: readonly LiveCluster[] }>);
+    expect(replaced[0]?.clusters).toHaveLength(1);
+    expect(replaced[0]?.clusters[0]?.riderCount).toBe(1);
   });
 
   it('uses the configured telemetryWindowSeconds when querying recent telemetry', async () => {
     const deps = makeDeps([], { telemetryWindowSeconds: 60 });
-    const svc = new SpatialClusteringService(deps);
+    const svc  = new SpatialClusteringService(deps);
 
     await svc.refreshForRoute('500D');
 
     expect(deps.getRecentTelemetry).toHaveBeenCalledWith('500D', 60);
+  });
+
+  /**
+   * Bug 1 regression: concurrent calls for the same routeId must share the
+   * in-flight Promise — getRecentTelemetry should be called only ONCE even
+   * when 10 concurrent callers all hit refreshForRoute('500D') simultaneously.
+   */
+  it('coalesces concurrent refreshForRoute calls for the same route (Bug 1 fix)', async () => {
+    const points = [makePoint()];
+    const deps   = makeDeps(points);
+    const svc    = new SpatialClusteringService(deps);
+
+    // Fire 10 concurrent calls for the same route
+    const results = await Promise.all(
+      Array.from({ length: 10 }, () => svc.refreshForRoute('500D')),
+    );
+
+    // All 10 callers receive the same result
+    expect(results.every((r) => r === results[0])).toBe(true);
+    // But getRecentTelemetry was only called once (in-flight guard coalesced the rest)
+    expect(deps.getRecentTelemetry).toHaveBeenCalledOnce();
+    // atomicReplaceRoute also called only once
+    expect(deps.store.atomicReplaceRoute).toHaveBeenCalledOnce();
+  });
+
+  it('allows a fresh refresh after the in-flight guard clears', async () => {
+    const points = [makePoint()];
+    const deps   = makeDeps(points);
+    const svc    = new SpatialClusteringService(deps);
+
+    await svc.refreshForRoute('500D');
+    await svc.refreshForRoute('500D'); // second independent call after first completes
+
+    expect(deps.getRecentTelemetry).toHaveBeenCalledTimes(2);
+  });
+
+  it('runs concurrent refreshes for different routes independently', async () => {
+    const deps500D = makeDeps([makePoint({ routeId: '500D' })]);
+    const deps335E = makeDeps([makePoint({ routeId: '335E' })]);
+
+    // Shared store mock
+    const store = makeStoreFake();
+    deps500D.store = store as unknown as typeof deps500D.store;
+    deps335E.store = store as unknown as typeof deps335E.store;
+
+    const svc500D = new SpatialClusteringService(deps500D);
+    const svc335E = new SpatialClusteringService(deps335E);
+
+    const [r1, r2] = await Promise.all([
+      svc500D.refreshForRoute('500D'),
+      svc335E.refreshForRoute('335E'),
+    ]);
+
+    expect(r1).toBe(1);
+    expect(r2).toBe(1);
+    expect(store.atomicReplaceRoute).toHaveBeenCalledTimes(2);
   });
 });

@@ -92,12 +92,16 @@ export class TelemetryIngestService {
       return { status: 'error', error: err instanceof Error ? err.message : String(err) };
     }
 
-    // Refresh clusters for every unique route in this batch
+    // Bug 5 fix: refresh clusters for all unique routes concurrently.
+    // The former `for...of` with sequential `await` processed routes one at a time.
+    // A batch touching 5 routes now fires all 5 refreshForRoute calls in parallel.
+    // SpatialClusteringService.refreshForRoute already coalesces concurrent calls
+    // for the same routeId via its in-flight guard, so there is no double-work risk.
     const routeIds = [...new Set(validPayloads.map((p) => p.routeId))];
-    let totalRefreshed = 0;
-    for (const routeId of routeIds) {
-      totalRefreshed += await this.deps.clusteringService.refreshForRoute(routeId);
-    }
+    const refreshCounts = await Promise.all(
+      routeIds.map((id) => this.deps.clusteringService.refreshForRoute(id)),
+    );
+    const totalRefreshed = refreshCounts.reduce((s, n) => s + n, 0);
 
     return { status: 'ok', pointCount: validPayloads.length, clustersRefreshed: totalRefreshed };
   }

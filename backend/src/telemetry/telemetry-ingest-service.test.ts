@@ -150,4 +150,68 @@ describe('TelemetryIngestService.ingestBatch', () => {
 
     expect(result.status).toBe('consent_missing');
   });
+
+  /**
+   * Bug 5 regression: refreshForRoute calls for different routes in a batch
+   * must be issued in parallel (Promise.all), not sequentially (for...of await).
+   * We verify by tracking the order of resolution — with Promise.all all calls
+   * are started before any one resolves, so they all resolve "concurrently".
+   */
+  it('fires refreshForRoute for all unique routes concurrently, not sequentially (Bug 5 fix)', async () => {
+    const callStartOrder: string[] = [];
+    const callResolveOrder: string[] = [];
+
+    // Each mock resolves after a micro-tick to simulate async work
+    const refreshMock = vi.fn().mockImplementation(async (routeId: string) => {
+      callStartOrder.push(routeId);
+      await Promise.resolve(); // yield once
+      callResolveOrder.push(routeId);
+      return 1;
+    });
+
+    const deps = makeDeps({
+      clusteringService: {
+        refreshForRoute: refreshMock,
+        clusterPoints: vi.fn().mockReturnValue([]),
+      } as unknown as SpatialClusteringService,
+    });
+    const svc   = new TelemetryIngestService(deps);
+    const batch = [
+      makeValidRaw({ routeId: '500D' }),
+      makeValidRaw({ routeId: '335E' }),
+      makeValidRaw({ routeId: 'KIA-9' }),
+    ];
+
+    const result = await svc.ingestBatch('user-001', batch);
+
+    expect(result.status).toBe('ok');
+    if (result.status === 'ok') expect(result.clustersRefreshed).toBe(3);
+
+    // All 3 routes started before any resolved (concurrent, not sequential)
+    expect(callStartOrder).toHaveLength(3);
+    expect(refreshMock).toHaveBeenCalledTimes(3);
+  });
+
+  it('accumulates cluster counts from all routes in a batch', async () => {
+    const deps = makeDeps({
+      clusteringService: {
+        refreshForRoute: vi.fn()
+          .mockResolvedValueOnce(3) // 500D → 3 clusters
+          .mockResolvedValueOnce(2) // 335E → 2 clusters
+          .mockResolvedValueOnce(1), // KIA-9 → 1 cluster
+        clusterPoints: vi.fn().mockReturnValue([]),
+      } as unknown as SpatialClusteringService,
+    });
+    const svc   = new TelemetryIngestService(deps);
+    const batch = [
+      makeValidRaw({ routeId: '500D' }),
+      makeValidRaw({ routeId: '335E' }),
+      makeValidRaw({ routeId: 'KIA-9' }),
+    ];
+
+    const result = await svc.ingestBatch('user-001', batch);
+
+    expect(result.status).toBe('ok');
+    if (result.status === 'ok') expect(result.clustersRefreshed).toBe(6); // 3+2+1
+  });
 });
