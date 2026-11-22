@@ -20,6 +20,8 @@ dependencies:
   # Local database (GTFS offline)
   drift: ^2.16.0
   sqlite3_flutter_libs: ^0.5.21
+  path: ^1.9.0
+  path_provider: ^2.1.2
 
   # Location — battery-efficient per .bobrules §4
   geolocator: ^11.0.0
