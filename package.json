@@ -1,0 +1,40 @@
+{
+  "name": "buselli-monorepo",
+  "version": "0.1.0",
+  "private": true,
+  "description": "BusElli — Offline-first crowdsourced BMTC bus tracking monorepo",
+  "workspaces": [
+    "backend",
+    "gtfs-parser",
+    "shared"
+  ],
+  "engines": {
+    "node": ">=20.0.0",
+    "npm": ">=10.0.0"
+  },
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev --parallel",
+    "test": "turbo run test",
+    "test:coverage": "turbo run test:coverage",
+    "lint": "turbo run lint",
+    "typecheck": "turbo run typecheck",
+    "clean": "turbo run clean && rm -rf node_modules",
+    "docker:up": "docker compose -f docker/docker-compose.yml up -d",
+    "docker:down": "docker compose -f docker/docker-compose.yml down",
+    "gtfs:import": "npm run build --workspace=gtfs-parser && node gtfs-parser/dist/cli.js"
+  },
+  "devDependencies": {
+    "turbo": "^2.0.0",
+    "@typescript-eslint/eslint-plugin": "^7.0.0",
+    "@typescript-eslint/parser": "^7.0.0",
+    "eslint": "^8.57.0",
+    "prettier": "^3.2.0",
+    "typescript": "^5.4.0"
+  },
+  "turbo": {
+    "extends": [
+      "//"
+    ]
+  }
+}

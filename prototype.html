@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>BusElli — Interactive Prototype</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,"Segoe UI",system-ui,sans-serif;background:#0f1117;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;min-height:100vh;padding:24px 16px 40px;color:#e2e8f0}
+h1{font-size:22px;font-weight:800;margin-bottom:4px;color:#f1f5f9}
+.sub{font-size:12px;color:#64748b;margin-bottom:20px}
+.layout{display:flex;gap:36px;align-items:flex-start;flex-wrap:wrap;justify-content:center}
+/* PHONE */
+.phone-frame{width:390px;height:844px;background:#111827;border-radius:40px;border:3px solid #374151;overflow:hidden;position:relative;box-shadow:0 0 60px rgba(59,130,246,.2);flex-shrink:0}
+.phone-screen{width:100%;height:100%;overflow-y:auto;overflow-x:hidden;scrollbar-width:thin;scrollbar-color:#2a3550 transparent;position:relative}
+.screen{display:none;flex-direction:column;min-height:100%}
+.screen.active{display:flex}
+/* STATUS BAR */
+.status-bar{background:#111827;padding:12px 24px 4px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:10}
+.status-time{color:#f1f5f9;font-size:13px;font-weight:700}
+.status-icons{display:flex;gap:5px;align-items:center;color:#94a3b8;font-size:10px}
+/* APP HEADER */
+.app-header{padding:12px 20px 10px;background:linear-gradient(135deg,#1e3a8a 0%,#1d4ed8 100%)}
+.logo{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.logo-icon{width:28px;height:28px;background:#fff;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px}
+.logo-text{font-size:18px;font-weight:800;color:#fff}
+.logo-sub{font-size:10px;color:#93c5fd}
+.offline-badge{display:flex;align-items:center;gap:5px;background:rgba(255,255,255,.12);border-radius:8px;padding:4px 10px;margin-left:auto}
+.offline-dot{width:7px;height:7px;border-radius:50%;background:#22c55e;animation:pulse 1.5s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.offline-text{font-size:10px;color:#bbf7d0;font-weight:600}
+/* SEARCH */
+.search-container{background:linear-gradient(135deg,#1e3a8a,#1d4ed8);padding:0 20px 14px}
+.search-bar{background:rgba(255,255,255,.95);border-radius:12px;padding:10px 14px;display:flex;align-items:center;gap:8px;cursor:pointer}
+.search-bar span{color:#6b7280;font-size:14px}
+.search-bar p{font-size:13px;color:#9ca3af}
+/* SEC LABEL */
+.sec-label{padding:0 20px 8px;font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.6px}
+/* NEARBY */
+.nearby-scroll{display:flex;gap:10px;padding:0 20px 16px;overflow-x:auto;scrollbar-width:none}
+.nearby-scroll::-webkit-scrollbar{display:none}
+.nearby-card{background:#1f2937;border-radius:12px;padding:12px;min-width:160px;border:1px solid #374151;flex-shrink:0;cursor:pointer;transition:border-color .2s}
+.nearby-card:hover{border-color:#3b82f6}
+.stop-name{font-size:12px;font-weight:700;color:#f1f5f9}
+.walk-dist{font-size:10px;color:#6b7280;margin-bottom:6px}
+.bus-pill{display:flex;align-items:center;gap:5px;background:#0f172a;border-radius:6px;padding:4px 7px;margin-bottom:4px}
+.bus-num{font-size:11px;font-weight:700;color:#60a5fa}
+.eta-text{font-size:10px;color:#94a3b8}
+.crowd-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.crowd-dot.g{background:#22c55e}.crowd-dot.y{background:#f59e0b}.crowd-dot.r{background:#ef4444}
+/* ROUTE ROW */
+.route-row{display:flex;align-items:center;gap:12px;background:#1f2937;border-radius:10px;padding:12px 14px;margin:0 20px 8px;cursor:pointer;border:1px solid #374151;transition:border-color .2s}
+.route-row:hover{border-color:#3b82f6}
+.route-num{background:#1d4ed8;color:#fff;border-radius:7px;padding:4px 9px;font-size:12px;font-weight:800;min-width:44px;text-align:center}
+.route-info{flex:1}
+.route-desc{font-size:12px;color:#e2e8f0;font-weight:600}
+.route-stops{font-size:10px;color:#6b7280}
+.route-eta{font-size:13px;font-weight:700;color:#22c55e}
+.route-eta-min{font-size:9px;color:#6b7280}
+/* BOTTOM NAV */
+.bottom-nav{position:sticky;bottom:0;background:#111827;border-top:1px solid #1f2937;display:flex;padding:8px 0 16px}
+.nav-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer}
+.nav-icon{font-size:18px}
+.nav-label{font-size:9px;color:#6b7280}
+.nav-item.active .nav-label{color:#3b82f6}
+/* ROUTE SCREEN HEADER */
+.route-header{background:linear-gradient(135deg,#064e3b,#065f46);padding:14px 20px}
+.route-header-top{display:flex;align-items:center;gap:10px;margin-bottom:4px}
+.back-btn{color:#a7f3d0;font-size:16px;cursor:pointer;background:none;border:none;padding:0}
+.route-num-lg{background:#059669;color:#fff;border-radius:8px;padding:5px 12px;font-size:16px;font-weight:900}
+.route-name{font-size:13px;color:#a7f3d0;font-weight:600}
+.route-meta{font-size:10px;color:#6ee7b7;margin-top:2px}
+.live-info-row{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+.info-chip{background:rgba(255,255,255,.1);border-radius:6px;padding:4px 9px;font-size:10px;color:#d1fae5;font-weight:600}
+/* TIMELINE */
+.timeline-wrap{padding:16px 20px;flex:1}
+.timeline-stop{display:flex;gap:12px;margin-bottom:4px;position:relative}
+.tl-left{display:flex;flex-direction:column;align-items:center;width:36px;flex-shrink:0}
+.stop-node{width:12px;height:12px;border-radius:50%;border:2px solid #4b5563;background:#111827;flex-shrink:0;z-index:1}
+.stop-node.passed{background:#059669;border-color:#059669}
+.stop-node.current{background:#3b82f6;border-color:#3b82f6;box-shadow:0 0 8px #3b82f6;width:14px;height:14px}
+.stop-node.terminal{background:#1d4ed8;border-color:#1d4ed8;width:14px;height:14px}
+.stop-line{flex:1;width:2px;background:#1f2937}
+.stop-line.passed{background:#059669}
+.stop-line.none{background:transparent}
+.tl-right{padding:0 0 16px;flex:1}
+.sn{font-size:12px;color:#e2e8f0;font-weight:600}
+.sn.muted{color:#4b5563}
+.sn.active{color:#60a5fa;font-weight:700}
+.stop-tags{display:flex;gap:5px;margin-top:3px;flex-wrap:wrap}
+.st{font-size:9px;padding:2px 6px;border-radius:8px;font-weight:700}
+.st.g{background:#14532d;color:#4ade80}
+.st.y{background:#713f12;color:#fbbf24}
+.st.r{background:#7f1d1d;color:#f87171}
+.st.b{background:#1e3a5f;color:#93c5fd}
+.st.p{background:#3b1f6e;color:#c084fc}
+.bus-icon{font-size:16px;margin:3px 0}
+.set-alarm-link{background:#312e81;color:#c7d2fe;font-size:9px;padding:1px 5px;border-radius:5px;margin-left:4px;cursor:pointer;border:none}
+/* FAB */
+.fab-btn{position:absolute;bottom:84px;right:20px;width:52px;height:52px;background:#1d4ed8;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:20px;cursor:pointer;box-shadow:0 4px 20px rgba(29,78,216,.5);border:none;color:#fff;transition:transform .2s}
+.fab-btn:active{transform:scale(.92)}
+/* DRAWER */
+.drawer-overlay{position:absolute;bottom:0;left:0;right:0;background:#1a2035;border-radius:20px 20px 0 0;padding:20px;border-top:1px solid #2a3550;z-index:60;display:none}
+.drawer-overlay.open{display:block}
+.drawer-handle{width:36px;height:4px;background:#374151;border-radius:2px;margin:0 auto 16px}
+.drawer-title{font-size:15px;font-weight:700;color:#f1f5f9;margin-bottom:4px}
+.drawer-sub{font-size:11px;color:#6b7280;margin-bottom:16px}
+.tag-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px}
+.tag-btn{background:#0f172a;border:1px solid #374151;border-radius:10px;padding:10px;text-align:center;cursor:pointer;transition:all .2s}
+.tag-btn.selected{border-color:#3b82f6;background:#1e3a5f}
+.tag-icon{font-size:20px;display:block;margin-bottom:4px}
+.tag-label{font-size:11px;font-weight:600;color:#e2e8f0}
+.tag-sub{font-size:9px;color:#6b7280}
+.karma-row{display:flex;align-items:center;gap:8px;background:#0f172a;border-radius:10px;padding:10px 14px;margin-bottom:14px}
+.karma-text{font-size:12px;color:#fbbf24;font-weight:600}
+.karma-sub{font-size:10px;color:#6b7280}
+.submit-btn{width:100%;background:#1d4ed8;color:#fff;border:none;border-radius:12px;padding:13px;font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:background .2s}
+.submit-btn:hover{background:#2563eb}
+/* ALARM SCREEN */
+.alarm-header{background:linear-gradient(135deg,#312e81,#4c1d95);padding:14px 20px}
+.alarm-row{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;background:#1f2937;border-radius:10px;margin-bottom:8px;border:1px solid #374151}
+.alarm-stop-name{font-size:13px;font-weight:600;color:#e2e8f0}
+.alarm-stop-dist{font-size:10px;color:#6b7280}
+.toggle-wrap{position:relative;width:44px;height:24px}
+.toggle-wrap input{opacity:0;width:0;height:0;position:absolute}
+.toggle-slider{position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;background:#374151;border-radius:12px;transition:.3s}
+.toggle-slider:before{content:'';position:absolute;width:18px;height:18px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:.3s}
+.toggle-wrap input:checked+.toggle-slider{background:#3b82f6}
+.toggle-wrap input:checked+.toggle-slider:before{transform:translateX(20px)}
+.alarm-active-card{background:linear-gradient(135deg,#312e81,#1d4ed8);border-radius:12px;padding:16px;margin:0 20px 16px;border:1px solid #4338ca}
+.alarm-active-title{font-size:13px;font-weight:700;color:#c7d2fe;margin-bottom:4px}
+.alarm-active-stop{font-size:17px;font-weight:800;color:#fff}
+.alarm-active-meta{font-size:11px;color:#818cf8;margin-top:4px}
+.vibe-btn{margin-top:12px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);border-radius:8px;padding:8px 14px;color:#e0e7ff;font-size:12px;font-weight:600;cursor:pointer;display:inline-block}
+/* LEGEND PANEL */
+.legend{max-width:260px;padding-top:8px}
+.legend h2{font-size:14px;font-weight:700;color:#e2e8f0;margin-bottom:12px}
+.legend-section{background:#1a2035;border:1px solid #2a3550;border-radius:10px;padding:14px;margin-bottom:12px}
+.legend-section h3{font-size:11px;font-weight:700;color:#60a5fa;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px}
+.legend-row{display:flex;align-items:center;gap:8px;margin-bottom:5px}
+.legend-row span{font-size:11px;color:#94a3b8}
+.dot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
+.dot.g{background:#22c55e}.dot.y{background:#f59e0b}.dot.r{background:#ef4444}
+.screen-nav-btn{display:block;width:100%;background:#1a2035;border:1px solid #2a3550;border-radius:8px;padding:9px 12px;color:#94a3b8;font-size:12px;text-align:left;cursor:pointer;margin-bottom:6px;transition:all .2s}
+.screen-nav-btn:hover,.screen-nav-btn.active-btn{background:#1e3a5f;border-color:#2563eb;color:#93c5fd}
+.spacer{height:16px}
+footer{text-align:center;margin-top:28px;border-top:1px solid #1e2533;padding-top:14px;color:#374151;font-size:11px;width:100%;max-width:700px}
+</style>
+</head>
+<body>
+
+<h1>🚌 BusElli — Interactive Prototype</h1>
+<p class="sub">Bengaluru Offline-First Crowdsourced Bus Tracking · Tap through 3 screens</p>
+
+<div class="layout">
+
+  <!-- ═══════════════ PHONE FRAME ═══════════════ -->
+  <div class="phone-frame">
+    <div class="phone-screen">
+
+      <!-- ════ SCREEN 1: HOME ════ -->
+      <div id="screen-home" class="screen active">
+        <div class="status-bar">
+          <span class="status-time">9:14</span>
+          <div class="status-icons"><span>▲▼ 4G</span><span>🔋</span></div>
+        </div>
+        <div class="app-header">
+          <div class="logo">
+            <div class="logo-icon">🚌</div>
+            <div>
+              <div class="logo-text">BusElli</div>
+              <div class="logo-sub">Bengaluru Live Transit</div>
+            </div>
+            <div class="offline-badge">
+              <div class="offline-dot"></div>
+              <span class="offline-text">Offline Ready</span>
+            </div>
+          </div>
+        </div>
+        <div class="search-container">
+          <div class="search-bar" onclick="showScreen('route')">
+            <span>🔍</span>
+            <p>Search bus no. or stop name…</p>
+          </div>
+        </div>
+
+        <div style="flex:1;background:#111827;padding-top:14px">
+          <div class="sec-label">NEARBY STOPS</div>
+          <div class="nearby-scroll">
+            <div class="nearby-card" onclick="showScreen('route')">
+              <div class="stop-name">Silk Board Junction</div>
+              <div class="walk-dist">🚶 180m away</div>
+              <div class="bus-pill"><span class="crowd-dot g"></span><span class="bus-num">500D</span><span class="eta-text">3 min</span></div>
+              <div class="bus-pill"><span class="crowd-dot r"></span><span class="bus-num">335E</span><span class="eta-text">7 min</span></div>
+              <div class="bus-pill"><span class="crowd-dot y"></span><span class="bus-num">KIA-9</span><span class="eta-text">12 min</span></div>
+            </div>
+            <div class="nearby-card">
+              <div class="stop-name">BTM 2nd Stage</div>
+              <div class="walk-dist">🚶 420m away</div>
+              <div class="bus-pill"><span class="crowd-dot g"></span><span class="bus-num">201R</span><span class="eta-text">5 min</span></div>
+              <div class="bus-pill"><span class="crowd-dot y"></span><span class="bus-num">271</span><span class="eta-text">9 min</span></div>
+            </div>
+            <div class="nearby-card">
+              <div class="stop-name">Bommanahalli Gate</div>
+              <div class="walk-dist">🚶 650m away</div>
+              <div class="bus-pill"><span class="crowd-dot r"></span><span class="bus-num">KBS-18</span><span class="eta-text">2 min</span></div>
+              <div class="bus-pill"><span class="crowd-dot g"></span><span class="bus-num">366</span><span class="eta-text">15 min</span></div>
+            </div>
+          </div>
+
+          <div class="sec-label">RECENT ROUTES</div>
+          <div class="route-row" onclick="showScreen('route')">
+            <div class="route-num">500D</div>
+            <div class="route-info">
+              <div class="route-desc">Silk Board → KR Puram</div>
+              <div class="route-stops">via Marathahalli, Whitefield</div>
+            </div>
+            <div style="text-align:right">
+              <div class="route-eta">3 min</div>
+              <div class="route-eta-min">next bus</div>
+            </div>
+          </div>
+          <div class="route-row" onclick="showScreen('route')">
+            <div class="route-num">KIA-9</div>
+            <div class="route-info">
+              <div class="route-desc">Majestic → KIA Airport</div>
+              <div class="route-stops">via Hebbal, Yelahanka</div>
+            </div>
+            <div style="text-align:right">
+              <div class="route-eta">12 min</div>
+              <div class="route-eta-min">next bus</div>
+            </div>
+          </div>
+          <div class="route-row" onclick="showScreen('route')">
+            <div class="route-num">335E</div>
+            <div class="route-info">
+              <div class="route-desc">Majestic → Whitefield</div>
+              <div class="route-stops">via Tin Factory, ITPL Gate</div>
+            </div>
+            <div style="text-align:right">
+              <div class="route-eta">7 min</div>
+              <div class="route-eta-min">next bus</div>
+            </div>
+          </div>
+          <div class="spacer"></div>
+        </div>
+
+        <div class="bottom-nav">
+          <div class="nav-item active" onclick="showScreen('home')"><span class="nav-icon">🏠</span><span class="nav-label">Home</span></div>
+          <div class="nav-item" onclick="showScreen('route')"><span class="nav-icon">🗺️</span><span class="nav-label">Routes</span></div>
+          <div class="nav-item" onclick="showScreen('alarm')"><span class="nav-icon">🔔</span><span class="nav-label">Alarms</span></div>
+          <div class="nav-item"><span class="nav-icon">⭐</span><span class="nav-label">Karma</span></div>
+        </div>
+      </div>
+
+      <!-- ════ SCREEN 2: LIVE ROUTE ════ -->
+      <div id="screen-route" class="screen">
+        <div class="status-bar">
+          <span class="status-time">9:15</span>
+          <div class="status-icons"><span>▲▼ 4G</span><span>🔋</span></div>
+        </div>
+        <div class="route-header">
+          <div class="route-header-top">
+            <button class="back-btn" onclick="showScreen('home')">←</button>
+            <div class="route-num-lg">500D</div>
+            <div>
+              <div class="route-name">Silk Board → KR Puram</div>
+              <div class="route-meta">26 stops · ~58 min full run</div>
+            </div>
+          </div>
+          <div class="live-info-row">
+            <div class="info-chip">🟢 2 Live Buses</div>
+            <div class="info-chip">📡 Last update: 42s ago</div>
+            <div class="info-chip">⬇️ Offline OK</div>
+          </div>
+        </div>
+
+        <div class="timeline-wrap">
+          <!-- Passed stops -->
+          <div class="timeline-stop">
+            <div class="tl-left"><div class="stop-node passed"></div><div class="stop-line passed"></div></div>
+            <div class="tl-right"><div class="sn muted">Silk Board Junction</div></div>
+          </div>
+          <div class="timeline-stop">
+            <div class="tl-left"><div class="stop-node passed"></div><div class="stop-line passed"></div></div>
+            <div class="tl-right"><div class="sn muted">Forum Mall</div></div>
+          </div>
+          <!-- Bus A between stops -->
+          <div class="timeline-stop">
+            <div class="tl-left" style="justify-content:center"><div class="bus-icon">🚌</div><div class="stop-line passed"></div></div>
+            <div class="tl-right">
+              <div class="stop-tags">
+                <span class="st g">Seats Free</span>
+                <span class="st b">❄️ AC OK</span>
+                <span style="font-size:9px;color:#6b7280;align-self:center">Conf. 94%</span>
+              </div>
+            </div>
+          </div>
+          <!-- Current stop -->
+          <div class="timeline-stop">
+            <div class="tl-left"><div class="stop-node current"></div><div class="stop-line"></div></div>
+            <div class="tl-right">
+              <div class="sn active">Koramangala 1st Block <span style="background:#1e3a5f;color:#93c5fd;font-size:9px;padding:1px 5px;border-radius:5px;margin-left:4px">YOU ARE HERE</span></div>
+              <div class="stop-tags"><span class="st g">3 min ETA · Bus A</span></div>
+            </div>
+          </div>
+          <!-- Next stops -->
+          <div class="timeline-stop">
+            <div class="tl-left"><div class="stop-node"></div><div class="stop-line"></div></div>
+            <div class="tl-right"><div class="sn">Koramangala BDA Complex</div><div class="stop-tags"><span class="st g">6 min ETA</span></div></div>
+          </div>
+          <!-- Bus B between stops -->
+          <div class="timeline-stop">
+            <div class="tl-left" style="justify-content:center"><div class="bus-icon">🚌</div><div class="stop-line"></div></div>
+            <div class="tl-right">
+              <div class="stop-tags">
+                <span class="st r">Packed</span>
+                <span class="st y">🌡️ AC Off</span>
+                <span style="font-size:9px;color:#6b7280;align-self:center">Conf. 78%</span>
+              </div>
+            </div>
+          </div>
+          <div class="timeline-stop">
+            <div class="tl-left"><div class="stop-node"></div><div class="stop-line"></div></div>
+            <div class="tl-right"><div class="sn">Sony World Signal</div><div class="stop-tags"><span class="st g">9 min ETA</span></div></div>
+          </div>
+          <div class="timeline-stop">
+            <div class="tl-left"><div class="stop-node"></div><div class="stop-line"></div></div>
+            <div class="tl-right"><div class="sn">Domlur Flyover</div></div>
+          </div>
+          <div class="timeline-stop">
+            <div class="tl-left"><div class="stop-node"></div><div class="stop-line"></div></div>
+            <div class="tl-right"><div class="sn">Indiranagar CMH Road</div></div>
+          </div>
+          <div class="timeline-stop">
+            <div class="tl-left"><div class="stop-node"></div><div class="stop-line"></div></div>
+            <div class="tl-right">
+              <div class="sn">Marathahalli Bridge <button class="set-alarm-link" onclick="showScreen('alarm')">🔔 Set Alarm</button></div>
+            </div>
+          </div>
+          <div class="timeline-stop">
+            <div class="tl-left"><div class="stop-node"></div><div class="stop-line"></div></div>
+            <div class="tl-right"><div class="sn">Spice Garden Signal</div></div>
+          </div>
+          <div class="timeline-stop">
+            <div class="tl-left"><div class="stop-node terminal"></div><div class="stop-line none"></div></div>
+            <div class="tl-right"><div class="sn">KR Puram Bus Stand</div><div class="stop-tags"><span style="font-size:9px;color:#6b7280">terminus</span></div></div>
+          </div>
+          <div class="spacer"></div>
+        </div>
+
+        <!-- FAB + Drawer -->
+        <button class="fab-btn" id="fabBtn" onclick="toggleDrawer()">📍</button>
+        <div class="drawer-overlay" id="crowdDrawer">
+          <div class="drawer-handle"></div>
+          <div class="drawer-title">I'm on Bus 500D</div>
+          <div class="drawer-sub">Share live location + status · Earns karma ⭐</div>
+          <div class="tag-grid">
+            <div class="tag-btn selected" id="tagSeats" onclick="toggleTag('tagSeats')">
+              <span class="tag-icon">💺</span>
+              <div class="tag-label">Seats Free</div>
+              <div class="tag-sub">Lots of space</div>
+            </div>
+            <div class="tag-btn" id="tagCrowd" onclick="toggleTag('tagCrowd')">
+              <span class="tag-icon">👥</span>
+              <div class="tag-label">Crowded</div>
+              <div class="tag-sub">Standing room only</div>
+            </div>
+            <div class="tag-btn" id="tagPacked" onclick="toggleTag('tagPacked')">
+              <span class="tag-icon">🚨</span>
+              <div class="tag-label">Packed</div>
+              <div class="tag-sub">Can't board</div>
+            </div>
+            <div class="tag-btn selected" id="tagAC" onclick="toggleTag('tagAC')">
+              <span class="tag-icon">❄️</span>
+              <div class="tag-label">AC Working</div>
+              <div class="tag-sub">Cool &amp; running</div>
+            </div>
+          </div>
+          <div class="karma-row">
+            <span style="font-size:20px">⭐</span>
+            <div>
+              <div class="karma-text">+5 Karma Points</div>
+              <div class="karma-sub">Your total: 234 pts · Rank #47 on ORR Corridor</div>
+            </div>
+          </div>
+          <button class="submit-btn" id="submitBtn" onclick="submitReport()">📡 Share Live Status</button>
+        </div>
+
+        <div class="bottom-nav">
+          <div class="nav-item" onclick="showScreen('home')"><span class="nav-icon">🏠</span><span class="nav-label">Home</span></div>
+          <div class="nav-item active" onclick="showScreen('route')"><span class="nav-icon">🗺️</span><span class="nav-label">Routes</span></div>
+          <div class="nav-item" onclick="showScreen('alarm')"><span class="nav-icon">🔔</span><span class="nav-label">Alarms</span></div>
+          <div class="nav-item"><span class="nav-icon">⭐</span><span class="nav-label">Karma</span></div>
+        </div>
+      </div>
+
+      <!-- ════ SCREEN 3: ALARM ════ -->
+      <div id="screen-alarm" class="screen">
+        <div class="status-bar">
+          <span class="status-time">9:16</span>
+          <div class="status-icons"><span>▲▼ 4G</span><span>🔋</span></div>
+        </div>
+        <div class="alarm-header">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px">
+            <button class="back-btn" onclick="showScreen('route')">←</button>
+            <div>
+              <div style="font-size:17px;font-weight:800;color:#fff">Stop Wake-Up Alarm</div>
+              <div style="font-size:11px;color:#818cf8">Route 500D · 2 stops before alert</div>
+            </div>
+          </div>
+        </div>
+
+        <div style="flex:1;background:#111827;padding-top:14px">
+          <div class="alarm-active-card">
+            <div class="alarm-active-title">🔔 Active Alarm Set</div>
+            <div class="alarm-active-stop">Marathahalli Bridge</div>
+            <div class="alarm-active-meta">Alert fires at: Domlur Flyover (2 stops before) · Works offline via cell-tower</div>
+            <div class="vibe-btn" id="vibeBtn" onclick="testVibe()">📳 Test Vibration</div>
+          </div>
+
+          <div class="sec-label">SET ALARM FOR STOP</div>
+          <div style="padding:0 20px">
+            <div class="alarm-row">
+              <div>
+                <div class="alarm-stop-name">Koramangala 1st Block</div>
+                <div class="alarm-stop-dist">Next stop after current position</div>
+              </div>
+              <label class="toggle-wrap"><input type="checkbox"/><span class="toggle-slider"></span></label>
+            </div>
+            <div class="alarm-row">
+              <div>
+                <div class="alarm-stop-name">Sony World Signal</div>
+                <div class="alarm-stop-dist">2 stops away · ~9 min</div>
+              </div>
+              <label class="toggle-wrap"><input type="checkbox"/><span class="toggle-slider"></span></label>
+            </div>
+            <div class="alarm-row" style="border-color:#4338ca">
+              <div>
+                <div class="alarm-stop-name" style="color:#a5b4fc">Marathahalli Bridge</div>
+                <div class="alarm-stop-dist">3 stops away · ~14 min</div>
+              </div>
+              <label class="toggle-wrap"><input type="checkbox" checked/><span class="toggle-slider"></span></label>
+            </div>
+            <div class="alarm-row">
+              <div>
+                <div class="alarm-stop-name">Spice Garden Signal</div>
+                <div class="alarm-stop-dist">4 stops away · ~20 min</div>
+              </div>
+              <label class="toggle-wrap"><input type="checkbox"/><span class="toggle-slider"></span></label>
+            </div>
+            <div class="alarm-row">
+              <div>
+                <div class="alarm-stop-name">KR Puram Bus Stand</div>
+                <div class="alarm-stop-dist">Terminus · ~58 min</div>
+              </div>
+              <label class="toggle-wrap"><input type="checkbox"/><span class="toggle-slider"></span></label>
+            </div>
+          </div>
+          <div style="padding:12px 20px 16px">
+            <div style="background:#0d1117;border:1px solid #2a3550;border-radius:10px;padding:12px 14px">
+              <div style="font-size:11px;color:#fbbf24;font-weight:600;margin-bottom:4px">📵 Offline Mode Active</div>
+              <div style="font-size:11px;color:#6b7280">This alarm uses cell-tower geofencing and works even with mobile data disabled. No internet required at alarm time.</div>
+            </div>
+          </div>
+          <div class="spacer"></div>
+        </div>
+
+        <div class="bottom-nav">
+          <div class="nav-item" onclick="showScreen('home')"><span class="nav-icon">🏠</span><span class="nav-label">Home</span></div>
+          <div class="nav-item" onclick="showScreen('route')"><span class="nav-icon">🗺️</span><span class="nav-label">Routes</span></div>
+          <div class="nav-item active" onclick="showScreen('alarm')"><span class="nav-icon">🔔</span><span class="nav-label">Alarms</span></div>
+          <div class="nav-item"><span class="nav-icon">⭐</span><span class="nav-label">Karma</span></div>
+        </div>
+      </div>
+
+    </div><!-- end phone-screen -->
+  </div><!-- end phone-frame -->
+
+  <!-- ═══════════════ LEGEND PANEL ═══════════════ -->
+  <div class="legend">
+    <h2>Navigation Guide</h2>
+
+    <div class="legend-section">
+      <h3>Screens</h3>
+      <button class="screen-nav-btn active-btn" id="btn-home" onclick="showScreen('home')">🏠 Home / Route Search</button>
+      <button class="screen-nav-btn" id="btn-route" onclick="showScreen('route')">🗺️ Live Route View (500D)</button>
+      <button class="screen-nav-btn" id="btn-alarm" onclick="showScreen('alarm')">🔔 Stop Wake-Up Alarm</button>
+    </div>
+
+    <div class="legend-section">
+      <h3>Interactions</h3>
+      <div style="font-size:11px;color:#94a3b8;line-height:1.9">
+        <div>→ Tap <strong style="color:#e2e8f0">nearby stop card</strong> to open route view</div>
+        <div>→ Tap <strong style="color:#e2e8f0">📍 FAB button</strong> to open crowd-report drawer</div>
+        <div>→ Select <strong style="color:#e2e8f0">status tags</strong> and tap Submit</div>
+        <div>→ Tap <strong style="color:#e2e8f0">"Set Alarm"</strong> on Marathahalli stop</div>
+        <div>→ Toggle stops on the alarm screen</div>
+        <div>→ Tap <strong style="color:#e2e8f0">"Test Vibration"</strong> for feedback</div>
+      </div>
+    </div>
+
+    <div class="legend-section">
+      <h3>Crowd Tag Legend</h3>
+      <div class="legend-row"><div class="dot g"></div><span>Seats Available</span></div>
+      <div class="legend-row"><div class="dot y"></div><span>Standing Only</span></div>
+      <div class="legend-row"><div class="dot r"></div><span>Packed — Hard to Board</span></div>
+      <div class="legend-row"><span>❄️</span><span>AC Verified Working</span></div>
+      <div class="legend-row"><span>🌡️</span><span>AC Not Functioning</span></div>
+    </div>
+
+    <div class="legend-section">
+      <h3>Key UVPs</h3>
+      <div style="font-size:11px;color:#94a3b8;line-height:1.9">
+        <div>✅ <strong style="color:#e2e8f0">100% offline GTFS</strong> — no data needed</div>
+        <div>✅ <strong style="color:#e2e8f0">Live crowd/AC tags</strong> with 20-min decay</div>
+        <div>✅ <strong style="color:#e2e8f0">Cell-tower 2-stop alarm</strong> — works in dead zones</div>
+        <div>✅ <strong style="color:#e2e8f0">Karma points</strong> — gamified crowdsourcing loop</div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- end layout -->
+
+<footer>Made with IBM Bob</footer>
+
+<script>
+var drawerOpen = false;
+var submitDone = false;
+
+function showScreen(name) {
+  document.querySelectorAll('.screen').forEach(function(s){ s.classList.remove('active'); });
+  var el = document.getElementById('screen-' + name);
+  if (el) el.classList.add('active');
+  if (name !== 'route') {
+    var d = document.getElementById('crowdDrawer');
+    if (d) d.classList.remove('open');
+    drawerOpen = false;
+  }
+  document.querySelectorAll('.screen-nav-btn').forEach(function(b){ b.classList.remove('active-btn'); });
+  var ab = document.getElementById('btn-' + name);
+  if (ab) ab.classList.add('active-btn');
+  var ps = document.querySelector('.phone-screen');
+  if (ps) ps.scrollTop = 0;
+}
+
+function toggleDrawer() {
+  var d = document.getElementById('crowdDrawer');
+  drawerOpen = !drawerOpen;
+  if (drawerOpen) {
+    d.classList.add('open');
+  } else {
+    d.classList.remove('open');
+  }
+}
+
+function toggleTag(id) {
+  var el = document.getElementById(id);
+  if (el) el.classList.toggle('selected');
+}
+
+function submitReport() {
+  if (submitDone) return;
+  submitDone = true;
+  var btn = document.getElementById('submitBtn');
+  btn.textContent = '✅ Live Status Shared! +5 ⭐';
+  btn.style.background = '#059669';
+  setTimeout(function() {
+    var d = document.getElementById('crowdDrawer');
+    d.classList.remove('open');
+    drawerOpen = false;
+    submitDone = false;
+    btn.textContent = '📡 Share Live Status';
+    btn.style.background = '#1d4ed8';
+  }, 2200);
+}
+
+function testVibe() {
+  var btn = document.getElementById('vibeBtn');
+  btn.textContent = '📳 Alarm Triggered at Domlur!';
+  btn.style.background = 'rgba(99,102,241,.5)';
+  if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
+  setTimeout(function() {
+    btn.textContent = '📳 Test Vibration';
+    btn.style.background = 'rgba(255,255,255,.1)';
+  }, 2500);
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,67 @@
+name: buselli
+description: "BusElli — Offline-first crowdsourced BMTC bus tracking app"
+publish_to: "none"
+version: 1.0.0+1
+
+environment:
+  sdk: ">=3.3.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # Navigation
+  go_router: ^13.2.0
+
+  # State management
+  riverpod: ^2.5.1
+  flutter_riverpod: ^2.5.1
+
+  # Local database (GTFS offline)
+  drift: ^2.16.0
+  sqlite3_flutter_libs: ^0.5.21
+
+  # Location — battery-efficient per .bobrules §4
+  geolocator: ^11.0.0
+  # NOTE: Use LocationAccuracy.balanced or lower — bestForNavigation is BANNED per .bobrules §4.1
+
+  # Cell-tower fallback
+  telephony: ^0.2.0
+
+  # Background tasks (WorkManager equivalent for Flutter)
+  workmanager: ^0.5.2
+
+  # Network
+  dio: ^5.4.1
+  web_socket_channel: ^2.4.0
+
+  # Notifications / Alarms
+  flutter_local_notifications: ^17.0.0
+
+  # Geofencing (2-stop alarm per .bobrules §4.5)
+  geofence_service: ^5.0.0
+
+  # Offline-first sync queue
+  connectivity_plus: ^6.0.0
+
+  # Utilities
+  uuid: ^4.3.3
+  intl: ^0.19.0
+  freezed_annotation: ^2.4.1
+  json_annotation: ^4.9.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+  build_runner: ^2.4.9
+  freezed: ^2.5.2
+  json_serializable: ^6.8.0
+  mockito: ^5.4.4
+  drift_dev: ^2.16.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/gtfs/     # offline GTFS SQLite bundle packaged with app
+    - assets/fonts/

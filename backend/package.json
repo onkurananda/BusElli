@@ -1,0 +1,48 @@
+{
+  "name": "@buselli/backend",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "BusElli backend — telemetry ingest, ETA, clustering, WebSocket push",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "dev": "tsx watch src/index.ts",
+    "start": "node dist/index.js",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "test:watch": "vitest",
+    "lint": "eslint src test",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist coverage",
+    "migrate:up": "node -e \"require('./dist/db/migrate').up()\"",
+    "migrate:down": "node -e \"require('./dist/db/migrate').down()\""
+  },
+  "dependencies": {
+    "@buselli/shared": "*",
+    "fastify": "^4.26.0",
+    "@fastify/websocket": "^8.3.0",
+    "@fastify/rate-limit": "^9.1.0",
+    "@fastify/jwt": "^8.0.0",
+    "pgx": "npm:pg@^8.11.0",
+    "postgres": "^3.4.3",
+    "ioredis": "^5.3.2",
+    "kafkajs": "^2.2.4",
+    "zod": "^3.22.4",
+    "pino": "^8.19.0",
+    "uuid": "^9.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "@types/uuid": "^9.0.7",
+    "tsx": "^4.7.0",
+    "typescript": "^5.4.0",
+    "vitest": "^1.4.0",
+    "@vitest/coverage-v8": "^1.4.0",
+    "testcontainers": "^10.7.0",
+    "@testcontainers/postgresql": "^10.7.0",
+    "eslint": "^9.0.0",
+    "@typescript-eslint/eslint-plugin": "^7.0.0",
+    "@typescript-eslint/parser": "^7.0.0"
+  }
+}

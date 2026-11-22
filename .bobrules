@@ -1,0 +1,197 @@
+# BusElli Project Rules
+# ======================
+# These rules apply to every file in this monorepo.
+# Bob (and all contributors) must follow them without exception.
+
+---
+
+## 1. TYPESCRIPT STRICTNESS (backend & gtfs-parser)
+
+### 1.1 Compiler flags — ALL must be enabled in every tsconfig.json
+```json
+{
+  "strict": true,
+  "noUncheckedIndexedAccess": true,
+  "noImplicitOverride": true,
+  "exactOptionalPropertyTypes": true,
+  "noPropertyAccessFromIndexSignature": true,
+  "forceConsistentCasingInFileNames": true,
+  "isolatedModules": true
+}
+```
+- Never use `any`. Prefer `unknown` and narrow with type guards.
+- Never use non-null assertion (`!`) unless accompanied by an inline comment explaining why the value is guaranteed non-null.
+- All exported functions must have explicit return type annotations.
+- All interface/type names must be PascalCase; no `I` prefix.
+- Discriminated unions preferred over optional fields for variant modelling (e.g., `PositionSource`).
+
+### 1.2 Naming conventions
+- Files: `kebab-case.ts`
+- Classes: `PascalCase`
+- Functions and variables: `camelCase`
+- Constants and env-var keys: `SCREAMING_SNAKE_CASE`
+- Database column references: `snake_case` (matches PostGIS schema)
+
+### 1.3 Imports
+- Use path aliases (`@buselli/shared`, `@buselli/backend`) — never relative `../../../`.
+- Do not barrel-export everything from `index.ts`; export only the public API.
+- Node built-ins must use `node:` prefix (e.g. `import path from 'node:path'`).
+
+---
+
+## 2. GO TYPING (future Go microservices)
+
+- All structs that cross package boundaries must have JSON tags AND validation tags (e.g., `validate:"required,min=1"`).
+- Never use `interface{}` or `any`; use typed interfaces or generics.
+- Error handling: always wrap errors with `fmt.Errorf("context: %w", err)` — never swallow.
+- All exported functions must have GoDoc comments.
+- Use `pgx/v5` (not `database/sql`) for PostgreSQL; use `pgxpool` for connection pooling.
+- Spatial queries must go through the `internal/spatial` package — never raw SQL strings scattered across handlers.
+
+---
+
+## 3. POSTGIS SPATIAL INDEXING
+
+### 3.1 Mandatory index rules
+Every table with a `GEOMETRY` or `GEOGRAPHY` column MUST have:
+```sql
+CREATE INDEX ON <table> USING GIST (<geom_column>);
+```
+No geometry column may be added in a migration without a corresponding GIST index migration in the same file.
+
+### 3.2 Coordinate reference system
+- All geometries stored as `GEOMETRY(type, 4326)` (WGS-84 lon/lat).
+- Never mix SRID 4326 and 3857 in the same query. Convert explicitly with `ST_Transform`.
+- All bounding-box or distance queries must use `&&` operator (uses GIST index) followed by the precise predicate (e.g., `ST_DWithin`).
+
+### 3.3 Canonical spatial query patterns
+```sql
+-- GOOD: bbox filter first (index), then precise distance
+WHERE location && ST_Expand(ST_MakePoint(:lng, :lat)::geography, 500)
+  AND ST_DWithin(location::geography, ST_MakePoint(:lng, :lat)::geography, 500)
+
+-- BAD: ST_DWithin without && — does not use GIST on all Postgres versions
+WHERE ST_DWithin(location, ST_MakePoint(:lng, :lat), 0.005)
+```
+
+### 3.4 Map-matching (snap to route shape)
+- Use `ST_LineLocatePoint` to get fraction along shape, then `ST_LineInterpolatePoint` to snap.
+- Always validate `shape_dist_traveled` consistency before writing to `live_bus_positions`.
+- Reject GPS points with `accuracy_m > 50` before map-matching (high-noise GPS under flyovers).
+
+### 3.5 TimescaleDB hypertables
+- `telemetry_raw` and `live_bus_positions` MUST be TimescaleDB hypertables partitioned by `captured_at`/`updated_at`.
+- Chunk interval: 6 hours for `telemetry_raw`; 1 hour for `live_bus_positions`.
+- Retention policy: `telemetry_raw` → 72h; `live_bus_positions` → 7 days.
+- Never query these tables without a time-range predicate (`WHERE captured_at > NOW() - INTERVAL '10 minutes'`).
+
+---
+
+## 4. BATTERY-EFFICIENT BACKGROUND LOCATION (mobile — Flutter)
+
+### 4.1 GPS polling strategy
+- **Active foreground session** ("I'm on this bus" mode): GPS fix interval = **30 seconds**, `accuracy: LocationAccuracy.balanced` (not `high` — saves ~40% battery).
+- **Passive monitoring** (not in a session): Use `LocationAccuracy.low` with `distanceFilter: 100` meters — fires only on significant movement.
+- **Idle** (screen off, app backgrounded with no session): Suspend GPS entirely; use significant location changes (Android `FusedLocationProvider` passive listener; iOS `startMonitoringSignificantLocationChanges`).
+- **Never** use `LocationAccuracy.best` or `LocationAccuracy.bestForNavigation` — these are explicitly banned.
+
+### 4.2 Cell-tower fallback
+- When GPS accuracy > 50m OR GPS fix age > 90 seconds: switch to cell-tower LUT lookup (zero GPS hardware, ~0.1% battery/hour).
+- Cell-tower IDs must be collected via the `telephony` platform channel — do NOT use a third-party plugin that requests BACKGROUND_LOCATION for this.
+
+### 4.3 Telemetry batching
+- Batch GPS + cell-tower payloads locally in SQLite `telemetry_queue`.
+- Flush batch to backend ONLY when: (a) batch size ≥ 10 points, OR (b) ≥ 5 minutes since last flush, OR (c) app moves to foreground.
+- Never flush on EVERY GPS fix (this is a hard ban — it causes cellular radio wake-lock drain).
+- Use `WorkManager` (Android) / `BGTaskScheduler` (iOS) for background flush — not isolates or timers.
+
+### 4.4 Background service lifecycle
+- Foreground service notification must be shown while a telemetry session is active (Android requirement; also improves user trust).
+- Session auto-terminates if: accelerometer shows stationary for > 5 minutes, OR user has not interacted for > 60 minutes.
+- Battery stats must be logged per session and surfaced in the internal debug panel (`/debug/battery`).
+
+### 4.5 Geofence alarm (2-stop wake-up)
+- Use Android `GeofencingClient` / iOS `CLLocationManager.startMonitoringForRegion` — NOT continuous GPS polling for the alarm.
+- Geofence radius: 300m around the alert-trigger stop.
+- Maximum active geofences per user session: 2 (current + next meaningful stop).
+
+---
+
+## 5. ETA & CLUSTERING — TEST COVERAGE REQUIREMENTS
+
+### 5.1 Mandatory coverage targets
+| Module | Minimum line coverage | Minimum branch coverage |
+|---|---|---|
+| `backend/src/eta/` | **95%** | **90%** |
+| `backend/src/clustering/` | **95%** | **90%** |
+| `backend/src/map-matching/` | **90%** | **85%** |
+| `backend/src/crowd-tags/` | **85%** | **80%** |
+| `gtfs-parser/src/` | **90%** | **85%** |
+| All other backend src | **80%** | **75%** |
+
+Coverage is enforced by Vitest `coverage.thresholds` — CI fails if any threshold is not met.
+
+### 5.2 Required test cases for ETA module
+Every PR touching `eta/` MUST include tests for:
+- [ ] ETA when bus has fresh telemetry (confidence > 0.8)
+- [ ] ETA degradation when telemetry is stale (60s, 90s, 120s)
+- [ ] ETA when only historical speed profile is available (cold start)
+- [ ] ETA with speed = 0 (bus stopped at a stop)
+- [ ] ETA across midnight boundary (time wraps past 24:00 in GTFS format)
+- [ ] ETA with invalid/missing `shape_dist_traveled`
+- [ ] ETA when route has a loop segment (shape doubles back)
+
+### 5.3 Required test cases for clustering module
+Every PR touching `clustering/` MUST include tests for:
+- [ ] Single rider → result is exactly 1 bus cluster
+- [ ] 3 riders within 100m → merged into 1 cluster
+- [ ] 2 riders on different routes crossing the same point → NOT merged
+- [ ] Cluster eviction when last telemetry > 5 minutes old
+- [ ] GPS spoofing detection: speed > 80 km/h in city zone → point rejected
+- [ ] Stationary outlier removal (phone left in parked car near a route)
+- [ ] Cluster confidence score decay over time
+
+### 5.4 Test file conventions
+- Test files co-located: `src/eta/eta-calculator.ts` → `src/eta/eta-calculator.test.ts`
+- Test descriptions must be human-readable: `it('returns HISTORICAL_FALLBACK status when no telemetry received in last 120 seconds', ...)`
+- Spatial fixtures: pre-computed GeoJSON fixtures in `test/fixtures/routes/` — never hardcode lat/lng magic numbers inline.
+- Database tests: use `testcontainers` with a real PostGIS container (no mocking of spatial functions).
+- Use `vi.useFakeTimers()` for all time-dependent ETA and decay tests.
+
+---
+
+## 6. API & DATA CONTRACTS
+
+- All REST endpoints must be described in `openapi/buselli.yaml` (OpenAPI 3.1) before implementation.
+- Request/response shapes must be validated with `zod` at the boundary — never trust raw `req.body`.
+- Internal service-to-service types must live in `shared/types/` and be imported, never redeclared.
+- WebSocket message payloads must be typed as discriminated unions in `shared/types/ws-messages.ts`.
+
+---
+
+## 7. SECURITY & COMPLIANCE
+
+- All PII (user_id, phone number) must be stored encrypted at rest using `pgcrypto` `pgp_sym_encrypt`.
+- Telemetry payloads sent to backend must NOT include device IMEI or phone number — only an anonymous `session_id` (UUID v7).
+- DPDP Act 2023 compliance: consent must be recorded in `user_consents` table before any telemetry is collected. The app must NOT start the location service if consent row is missing.
+- No hardcoded secrets anywhere. Use environment variables validated at startup by `zod` schema.
+- Dependencies: run `npm audit` in CI; fail on HIGH or CRITICAL severity.
+
+---
+
+## 8. MIGRATIONS
+
+- All database schema changes go through numbered migration files in `backend/migrations/`.
+- Migration files: `NNNN_description.sql` (e.g., `0001_initial_gtfs_schema.sql`).
+- Every migration must be reversible — include both `-- +migrate Up` and `-- +migrate Down` sections.
+- PostGIS extension and TimescaleDB extension must be enabled in migration `0001`.
+- Never alter a column type in production migrations — always add new column, backfill, rename.
+
+---
+
+## 9. COMMIT & PR RULES
+
+- Commit messages follow Conventional Commits: `feat(eta): add historical fallback when telemetry stale`
+- No PR merges without passing CI (lint + typecheck + test + coverage thresholds).
+- PRs touching `clustering/` or `eta/` require a reviewer with domain knowledge (tagged `@buselli/core-algo`).
+- Database migration PRs require explicit sign-off comment `LGTM: migration reviewed` from a second engineer.

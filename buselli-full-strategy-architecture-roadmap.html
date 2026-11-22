@@ -1,0 +1,456 @@
+
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1.0" />
+<title>BusElli — Strategy &amp; Architecture</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,"Segoe UI",system-ui,sans-serif;background:#fff;color:#1f2328;font-size:14px;line-height:1.6}
+.wrap{max-width:760px;margin:0 auto;padding:32px 24px 48px}
+h1{font-size:26px;font-weight:800;color:#1f2328;margin-bottom:4px}
+h2{font-size:16px;font-weight:700;color:#1f2328;margin:28px 0 10px;padding-bottom:6px;border-bottom:2px solid #3b82d4}
+h3{font-size:13px;font-weight:700;color:#3b82d4;text-transform:uppercase;letter-spacing:.5px;margin-bottom:7px}
+p,li{font-size:13px;color:#57606a;line-height:1.75}
+ul{padding-left:16px}
+li{margin-bottom:3px}
+strong{color:#1f2328}
+.hero{background:#1e3a8a;border-radius:10px;padding:20px 22px;margin-bottom:28px;color:#fff}
+.hero h1{color:#fff;font-size:24px}
+.hero p{color:#93c5fd;font-size:13px;margin-top:4px}
+.badge-row{display:flex;flex-wrap:wrap;gap:7px;margin-top:12px}
+.badge{display:inline-block;padding:3px 10px;border-radius:12px;font-size:11px;font-weight:600;background:rgba(255,255,255,.15);color:#e0f2fe}
+/* GRID */
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+@media(max-width:600px){.g2,.g3{grid-template-columns:1fr}}
+/* CARDS */
+.card{background:#f7f8fa;border:1px solid #e5e7eb;border-radius:10px;padding:16px}
+.card h3{margin-bottom:6px}
+.card-blue{border-left:3px solid #3b82d4}
+.card-purple{border-left:3px solid #7c5cd8}
+.card-green{border-left:3px solid #16a34a}
+.card-yellow{border-left:3px solid #d97706}
+.card-red{border-left:3px solid #dc2626}
+/* STAT */
+.stat{text-align:center;padding:14px}
+.stat .number{font-size:28px;font-weight:800;color:#3b82d4}
+.stat .unit{font-size:11px;color:#57606a}
+/* TABLE */
+table{width:100%;border-collapse:collapse;font-size:12px;margin-top:4px}
+th{background:#f0f4ff;color:#1e3a8a;text-align:left;padding:7px 10px;border:1px solid #e5e7eb;font-weight:700}
+td{padding:6px 10px;border:1px solid #e5e7eb;color:#57606a;vertical-align:top}
+code{background:#f0f4ff;color:#1e3a8a;padding:1px 5px;border-radius:4px;font-size:11px}
+/* PHASE */
+.phase{display:flex;gap:14px;margin-bottom:16px;align-items:flex-start}
+.ph-num{background:#3b82d4;color:#fff;border-radius:50%;width:30px;height:30px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:12px;flex-shrink:0;margin-top:2px}
+.ph-num.p2{background:#7c5cd8}.ph-num.p3{background:#0891b2}
+.ph-content h4{font-size:13px;font-weight:700;color:#1f2328;margin-bottom:3px}
+.ph-tag{font-size:10px;color:#d97706;font-weight:600;background:#fef3c7;padding:1px 6px;border-radius:7px;margin-left:6px}
+/* RISK */
+.risk{border-left:3px solid #dc2626;padding-left:12px;margin-bottom:14px}
+.risk.m{border-color:#d97706}
+.risk h4{font-size:13px;font-weight:700;color:#1f2328}
+/* DIAGRAM */
+.diag{background:#0d1117;border-radius:10px;overflow:hidden;margin:12px 0}
+/* COMP TABLE */
+.cv{color:#16a34a;font-weight:700}
+.cx{color:#dc2626}
+.cy{color:#d97706}
+/* SEP */
+.sep{height:1px;background:#e5e7eb;margin:24px 0}
+/* FOOTER */
+footer{text-align:center;margin-top:32px;padding-top:14px;border-top:1px solid #e5e7eb;color:#9ca3af;font-size:11px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+
+<div class="hero">
+  <h1>🚌 BusElli</h1>
+  <p>Offline-first · Crowdsourced · Bengaluru BMTC Intelligence · 4M+ daily commuters</p>
+  <div class="badge-row">
+    <span class="badge">Working Title: BusElli / BLR Live Transit</span>
+    <span class="badge">Platform: Android + iOS (Flutter)</span>
+    <span class="badge">Market: BMTC Bengaluru</span>
+    <span class="badge">Stage: Pre-Seed Concept</span>
+  </div>
+</div>
+
+
+<h2>The Hook &amp; Problem</h2>
+<div class="g3">
+  <div class="card card-red">
+    <h3>Unpredictable ETAs</h3>
+    <p>No live BMTC public API. Commuters on ORR wait 20–40 min during peak hours with zero bus visibility.</p>
+  </div>
+  <div class="card card-yellow">
+    <h3>Broken AC &amp; Crowds</h3>
+    <p>No app shows real-time crowd level or AC status before boarding. Discovered only once inside the bus on a 36°C summer day.</p>
+  </div>
+  <div class="card card-red">
+    <h3>Cellular Dead Zones</h3>
+    <p>Silk Board flyover, KR Puram underpass, Bellandur stretch — all apps go dark exactly where commuters most need data.</p>
+  </div>
+</div>
+
+
+<h2>3 Unique Value Propositions</h2>
+<div class="g3">
+  <div class="card card-blue">
+    <h3>① Offline-First Core</h3>
+    <p>Full GTFS timetable + route shapes embedded locally (SQLite). Route search, stop lookup, and timetable work with <strong>zero data signal</strong>. No other Bengaluru transit app does this.</p>
+  </div>
+  <div class="card card-purple">
+    <h3>② Crowd-Verified Intel</h3>
+    <p>Live crowd/AC tags with 20-min auto-decay. Gamified <strong>karma points</strong> create a self-reinforcing update loop. Cell-tower triangulation inspired by "Where Is My Train" playbook.</p>
+  </div>
+  <div class="card card-green">
+    <h3>③ 2-Stop Wake-Up Alarm</h3>
+    <p>One-tap destination alarm fires via <strong>cell-tower geofencing</strong> — works with mobile data fully off. Haptic + audio 2 stops before exit. Unique in the BMTC app ecosystem.</p>
+  </div>
+</div>
+
+
+<h2>Market Opportunity (TAM / SAM / SOM)</h2>
+<div class="g3">
+  <div class="card stat">
+    <div class="number">450M+</div>
+    <div class="unit">Daily urban bus commutes in India (TAM)</div>
+  </div>
+  <div class="card stat">
+    <div class="number">35M+</div>
+    <div class="unit">BIG-4 city bus commuters daily (SAM)</div>
+  </div>
+  <div class="card stat">
+    <div class="number">4.2M</div>
+    <div class="unit">Bengaluru BMTC Y1 target (SOM)</div>
+  </div>
+</div>
+<div class="card" style="margin-top:14px">
+  <h3>Expansion Roadmap</h3>
+  <p>BusElli's tech is city-agnostic once a city's GTFS static feed is available: <strong>PMPML Pune</strong> (1.1M/day) → <strong>MTC Chennai</strong> (3.5M/day) → <strong>BEST Mumbai</strong> (2.9M/day) → <strong>DTC Delhi</strong> (4.0M/day) → <strong>TSRTC Hyderabad</strong> (2.0M/day).</p>
+</div>
+
+
+<h2>Competitive Moat</h2>
+<table>
+  <thead><tr><th>Feature</th><th>BusElli</th><th>Google Maps</th><th>Namma BMTC</th><th>Tummoc</th><th>Namma Yatri</th></tr></thead>
+  <tbody>
+    <tr><td>Offline GTFS</td><td class="cv">✅ Full</td><td class="cy">Partial</td><td class="cx">❌</td><td class="cx">❌</td><td class="cx">❌</td></tr>
+    <tr><td>Live Crowd Tags</td><td class="cv">✅ Crowdsourced</td><td class="cx">❌</td><td class="cx">❌</td><td class="cx">❌</td><td class="cx">❌</td></tr>
+    <tr><td>AC Status</td><td class="cv">✅ Crowdsourced</td><td class="cx">❌</td><td class="cx">❌</td><td class="cx">❌</td><td class="cx">❌</td></tr>
+    <tr><td>2-Stop Alarm</td><td class="cv">✅ Cell-tower</td><td class="cx">❌</td><td class="cx">❌</td><td class="cx">❌</td><td class="cx">❌</td></tr>
+    <tr><td>BMTC Specific</td><td class="cv">✅ Deep</td><td class="cy">Surface</td><td class="cv">✅ Official</td><td class="cy">Partial</td><td class="cx">Auto only</td></tr>
+  </tbody>
+</table>
+
+
+<h2>Go-To-Market: First 5,000 DAU</h2>
+<div class="g2">
+  <div class="card card-blue">
+    <h3>3 Launch Corridors</h3>
+    <ul>
+      <li><strong>Corridor 1:</strong> ORR Silk Board ↔ KR Puram (Routes 500D, 335E) — 180,000+ IT riders/day</li>
+      <li><strong>Corridor 2:</strong> Majestic ↔ Whitefield (335E, KBS-18) — student + mixed-income density</li>
+      <li><strong>Corridor 3:</strong> KIA Airport routes (KIA-9, KIA-10) — tech-savvy frequent travellers</li>
+    </ul>
+  </div>
+  <div class="card card-green">
+    <h3>Warden Program</h3>
+    <ul>
+      <li>50–100 "BusElli Wardens" per corridor, incentivised with ₹200 Swiggy vouchers/month</li>
+      <li>QR sticker flyers at Silk Board, Majestic, Marathahalli Bridge stops</li>
+      <li>IT park HR partnerships: free analytics dashboard in exchange for internal promotion</li>
+      <li>Reddit r/bangalore + Twitter/X organic seeding. Zero paid installs to 5K DAU.</li>
+    </ul>
+  </div>
+</div>
+
+
+<h2>Monetisation (3 Streams, No Ticket Booking)</h2>
+<div class="g3">
+  <div class="card card-yellow">
+    <h3>Hyperlocal Stop Ads</h3>
+    <p>Contextual cards shown when stop loads — "CCD 80m away." CPM ₹80–120. <strong>₹8–15L/month at 100K MAU.</strong></p>
+  </div>
+  <div class="card card-blue">
+    <h3>B2B Corridor Analytics</h3>
+    <p>Anonymised OD flow reports, utilisation heat maps, AC-failure frequency for tech park FM teams. <strong>₹25K–80K/month per client.</strong></p>
+  </div>
+  <div class="card card-green">
+    <h3>Commuter Plus ₹49/mo</h3>
+    <p>Ad-free, multi-route alarms, saved patterns, priority crowd data. At 5% of 100K MAU: <strong>₹2.45L/month MRR.</strong></p>
+  </div>
+</div>
+
+<div class="sep"></div>
+
+
+<h2>System Architecture</h2>
+<div class="diag">
+  <svg style="width:100%;font-family:-apple-system,sans-serif">
+    <defs>
+      <marker id="a1"><polygon points="0 0,8 3,0 6" fill="#34d399"></polygon></marker>
+      <marker id="a2"><polygon points="0 0,8 3,0 6" fill="#60a5fa"></polygon></marker>
+      <marker id="a3"><polygon points="0 0,8 3,0 6" fill="#fbbf24"></polygon></marker>
+    </defs>
+    
+    <rect x="10" y="14" width="155" height="450" rx="10" fill="#1a2035" stroke="#2563eb" stroke-width="1.5"></rect>
+    <text x="88" y="34" text-anchor="middle" fill="#93c5fd" font-size="10" font-weight="700">MOBILE CLIENT</text>
+    <text x="88" y="47" text-anchor="middle" fill="#4b5563" font-size="8">Flutter / React Native</text>
+    <rect x="22" y="56" width="131" height="32" rx="6" fill="#0d1117" stroke="#374151"></rect>
+    <text x="88" y="69" text-anchor="middle" fill="#f1f5f9" font-size="9" font-weight="600">SQLite Room DB</text>
+    <text x="88" y="81" text-anchor="middle" fill="#6b7280" font-size="8">GTFS static offline</text>
+    <rect x="22" y="96" width="131" height="32" rx="6" fill="#0d1117" stroke="#374151"></rect>
+    <text x="88" y="109" text-anchor="middle" fill="#f1f5f9" font-size="9" font-weight="600">GPS + Cell-Tower Capture</text>
+    <text x="88" y="121" text-anchor="middle" fill="#6b7280" font-size="8">MCC/MNC/LAC/CellID</text>
+    <rect x="22" y="136" width="131" height="32" rx="6" fill="#0d1117" stroke="#374151"></rect>
+    <text x="88" y="149" text-anchor="middle" fill="#f1f5f9" font-size="9" font-weight="600">Background Telemetry</text>
+    <text x="88" y="161" text-anchor="middle" fill="#6b7280" font-size="8">30s batch, offline queue</text>
+    <rect x="22" y="176" width="131" height="32" rx="6" fill="#0d1117" stroke="#374151"></rect>
+    <text x="88" y="189" text-anchor="middle" fill="#f1f5f9" font-size="9" font-weight="600">Crowd Tag UI</text>
+    <text x="88" y="201" text-anchor="middle" fill="#6b7280" font-size="8">Seats/AC/Packed + Karma</text>
+    <rect x="22" y="216" width="131" height="32" rx="6" fill="#0d1117" stroke="#374151"></rect>
+    <text x="88" y="229" text-anchor="middle" fill="#f1f5f9" font-size="9" font-weight="600">Geofence Alarm Engine</text>
+    <text x="88" y="241" text-anchor="middle" fill="#6b7280" font-size="8">2-stop offline wake-up</text>
+    <rect x="22" y="256" width="131" height="32" rx="6" fill="#0d1117" stroke="#374151"></rect>
+    <text x="88" y="269" text-anchor="middle" fill="#f1f5f9" font-size="9" font-weight="600">WebSocket Client</text>
+    <text x="88" y="281" text-anchor="middle" fill="#6b7280" font-size="8">Live bus state stream</text>
+    <rect x="22" y="296" width="131" height="32" rx="6" fill="#0d1117" stroke="#374151"></rect>
+    <text x="88" y="309" text-anchor="middle" fill="#f1f5f9" font-size="9" font-weight="600">Offline Sync Manager</text>
+    <text x="88" y="321" text-anchor="middle" fill="#6b7280" font-size="8">Queue flush on reconnect</text>
+    
+    <rect x="210" y="130" width="110" height="190" rx="10" fill="#1a2035" stroke="#7c3aed" stroke-width="1.5"></rect>
+    <text x="265" y="150" text-anchor="middle" fill="#c084fc" font-size="10" font-weight="700">API GATEWAY</text>
+    <text x="265" y="162" text-anchor="middle" fill="#4b5563" font-size="8">Kong / Nginx</text>
+    <rect x="220" y="170" width="90" height="24" rx="5" fill="#0d1117" stroke="#374151"></rect>
+    <text x="265" y="186" text-anchor="middle" fill="#f1f5f9" font-size="8">Auth JWT + OTP</text>
+    <rect x="220" y="200" width="90" height="24" rx="5" fill="#0d1117" stroke="#374151"></rect>
+    <text x="265" y="216" text-anchor="middle" fill="#f1f5f9" font-size="8">Rate Limiter</text>
+    <rect x="220" y="230" width="90" height="24" rx="5" fill="#0d1117" stroke="#374151"></rect>
+    <text x="265" y="246" text-anchor="middle" fill="#f1f5f9" font-size="8">gRPC / REST Router</text>
+    <rect x="220" y="260" width="90" height="24" rx="5" fill="#0d1117" stroke="#374151"></rect>
+    <text x="265" y="276" text-anchor="middle" fill="#f1f5f9" font-size="8">CDN GTFS bundles</text>
+    
+    <rect x="370" y="14" width="155" height="450" rx="10" fill="#1a2035" stroke="#059669" stroke-width="1.5"></rect>
+    <text x="448" y="34" text-anchor="middle" fill="#6ee7b7" font-size="10" font-weight="700">BACKEND SERVICES</text>
+    <text x="448" y="47" text-anchor="middle" fill="#4b5563" font-size="8">Node.js TypeScript / Go</text>
+    <rect x="382" y="56" width="131" height="32" rx="6" fill="#0d1117" stroke="#374151"></rect>
+    <text x="448" y="69" text-anchor="middle" fill="#f1f5f9" font-size="9" font-weight="600">Telemetry Ingest</text>
+    <text x="448" y="81" text-anchor="middle" fill="#6b7280" font-size="8">Kafka consumer, dedup</text>
+    <rect x="382" y="96" width="131" height="32" rx="6" fill="#0d1117" stroke="#374151"></rect>
+    <text x="448" y="109" text-anchor="middle" fill="#f1f5f9" font-size="9" font-weight="600">Map-Matching Engine</text>
+    <text x="448" y="121" text-anchor="middle" fill="#6b7280" font-size="8">Snap GPS → GTFS shapes</text>
+    <rect x="382" y="136" width="131" height="32" rx="6" fill="#0d1117" stroke="#374151"></rect>
+    <text x="448" y="149" text-anchor="middle" fill="#f1f5f9" font-size="9" font-weight="600">Bus Clustering Engine</text>
+    <text x="448" y="161" text-anchor="middle" fill="#6b7280" font-size="8">DBSCAN N riders → 1 bus</text>
+    <rect x="382" y="176" width="131" height="32" rx="6" fill="#0d1117" stroke="#374151"></rect>
+    <text x="448" y="189" text-anchor="middle" fill="#f1f5f9" font-size="9" font-weight="600">ETA Computation</text>
+    <text x="448" y="201" text-anchor="middle" fill="#6b7280" font-size="8">GTFS + observed speed</text>
+    <rect x="382" y="216" width="131" height="32" rx="6" fill="#0d1117" stroke="#374151"></rect>
+    <text x="448" y="229" text-anchor="middle" fill="#f1f5f9" font-size="9" font-weight="600">Crowd Tag Processor</text>
+    <text x="448" y="241" text-anchor="middle" fill="#6b7280" font-size="8">Time-decay, trust scoring</text>
+    <rect x="382" y="256" width="131" height="32" rx="6" fill="#0d1117" stroke="#374151"></rect>
+    <text x="448" y="269" text-anchor="middle" fill="#f1f5f9" font-size="9" font-weight="600">WebSocket Push</text>
+    <text x="448" y="281" text-anchor="middle" fill="#6b7280" font-size="8">Rooms by route + stop</text>
+    <rect x="382" y="296" width="131" height="32" rx="6" fill="#0d1117" stroke="#374151"></rect>
+    <text x="448" y="309" text-anchor="middle" fill="#f1f5f9" font-size="9" font-weight="600">Notification Service</text>
+    <text x="448" y="321" text-anchor="middle" fill="#6b7280" font-size="8">FCM push + SMS fallback</text>
+    <rect x="382" y="336" width="131" height="32" rx="6" fill="#0d1117" stroke="#374151"></rect>
+    <text x="448" y="349" text-anchor="middle" fill="#f1f5f9" font-size="9" font-weight="600">Analytics Pipeline</text>
+    <text x="448" y="361" text-anchor="middle" fill="#6b7280" font-size="8">ClickHouse OD warehouse</text>
+    
+    <rect x="575" y="14" width="175" height="450" rx="10" fill="#1a2035" stroke="#d97706" stroke-width="1.5"></rect>
+    <text x="663" y="34" text-anchor="middle" fill="#fbbf24" font-size="10" font-weight="700">DATA LAYER</text>
+    <rect x="587" y="46" width="151" height="40" rx="6" fill="#0d1117" stroke="#374151"></rect>
+    <text x="663" y="62" text-anchor="middle" fill="#f1f5f9" font-size="9" font-weight="600">Redis Cluster</text>
+    <text x="663" y="74" text-anchor="middle" fill="#6b7280" font-size="8">Live bus state · TTL 2 min</text>
+    <text x="663" y="83" text-anchor="middle" fill="#6b7280" font-size="8">WS Pub/Sub channels</text>
+    <rect x="587" y="96" width="151" height="40" rx="6" fill="#0d1117" stroke="#374151"></rect>
+    <text x="663" y="112" text-anchor="middle" fill="#f1f5f9" font-size="9" font-weight="600">PostgreSQL + PostGIS</text>
+    <text x="663" y="124" text-anchor="middle" fill="#6b7280" font-size="8">Routes/stops/spatial queries</text>
+    <text x="663" y="133" text-anchor="middle" fill="#6b7280" font-size="8">GIST indexes on geometry</text>
+    <rect x="587" y="146" width="151" height="40" rx="6" fill="#0d1117" stroke="#374151"></rect>
+    <text x="663" y="162" text-anchor="middle" fill="#f1f5f9" font-size="9" font-weight="600">Kafka / MQTT Broker</text>
+    <text x="663" y="174" text-anchor="middle" fill="#6b7280" font-size="8">telemetry.raw topic</text>
+    <text x="663" y="183" text-anchor="middle" fill="#6b7280" font-size="8">crowd.tags topic</text>
+    <rect x="587" y="196" width="151" height="32" rx="6" fill="#0d1117" stroke="#374151"></rect>
+    <text x="663" y="209" text-anchor="middle" fill="#f1f5f9" font-size="9" font-weight="600">TimescaleDB</text>
+    <text x="663" y="221" text-anchor="middle" fill="#6b7280" font-size="8">Time-series bus positions</text>
+    <rect x="587" y="238" width="151" height="32" rx="6" fill="#0d1117" stroke="#374151"></rect>
+    <text x="663" y="251" text-anchor="middle" fill="#f1f5f9" font-size="9" font-weight="600">ClickHouse (OLAP)</text>
+    <text x="663" y="263" text-anchor="middle" fill="#6b7280" font-size="8">Analytics queries</text>
+    <rect x="587" y="280" width="151" height="32" rx="6" fill="#0d1117" stroke="#374151"></rect>
+    <text x="663" y="293" text-anchor="middle" fill="#f1f5f9" font-size="9" font-weight="600">S3 / GCS</text>
+    <text x="663" y="305" text-anchor="middle" fill="#6b7280" font-size="8">GTFS bundles, shape files</text>
+    <rect x="587" y="322" width="151" height="32" rx="6" fill="#0d1117" stroke="#374151"></rect>
+    <text x="663" y="335" text-anchor="middle" fill="#f1f5f9" font-size="9" font-weight="600">Cell-Tower LUT DB</text>
+    <text x="663" y="347" text-anchor="middle" fill="#6b7280" font-size="8">MCC/MNC → lat/lng map</text>
+    
+    <line x1="155" y1="200" x2="208" y2="200" stroke="#34d399" stroke-width="1.5" marker-end="url(#a1)"></line>
+    <line x1="155" y1="240" x2="208" y2="240" stroke="#34d399" stroke-width="1.5" marker-end="url(#a1)"></line>
+    <line x1="322" y1="200" x2="368" y2="140" stroke="#60a5fa" stroke-width="1.5" marker-end="url(#a2)"></line>
+    <line x1="322" y1="225" x2="368" y2="225" stroke="#60a5fa" stroke-width="1.5" marker-end="url(#a2)"></line>
+    <line x1="322" y1="250" x2="368" y2="280" stroke="#60a5fa" stroke-width="1.5" marker-end="url(#a2)"></line>
+    <line x1="515" y1="90" x2="573" y2="80" stroke="#fbbf24" stroke-width="1.5" marker-end="url(#a3)"></line>
+    <line x1="515" y1="140" x2="573" y2="140" stroke="#fbbf24" stroke-width="1.5" marker-end="url(#a3)"></line>
+    <line x1="515" y1="180" x2="573" y2="175" stroke="#fbbf24" stroke-width="1.5" marker-end="url(#a3)"></line>
+    <line x1="515" y1="230" x2="573" y2="250" stroke="#fbbf24" stroke-width="1.5" marker-end="url(#a3)"></line>
+    <line x1="515" y1="360" x2="573" y2="260" stroke="#fbbf24" stroke-width="1.5" marker-end="url(#a3)"></line>
+    
+    <path d="M 382 275 Q 310 410 155 290" stroke="#a78bfa" stroke-width="1.5" fill="none" marker-end="url(#a1)"></path>
+  </svg>
+</div>
+
+
+<h2>Crowdsourced Telemetry Pipeline</h2>
+<div class="diag">
+  <svg style="width:100%;font-family:-apple-system,sans-serif">
+    <defs>
+      <marker id="fa"><polygon points="0 0,8 3,0 6" fill="#34d399"></polygon></marker>
+    </defs>
+    <rect x="8" y="40" width="100" height="52" rx="7" fill="#1a2035" stroke="#2563eb"></rect>
+    <text x="58" y="62" text-anchor="middle" fill="#93c5fd" font-size="9" font-weight="700">Rider taps</text>
+    <text x="58" y="74" text-anchor="middle" fill="#f1f5f9" font-size="8">"I'm on 500D"</text>
+    <text x="58" y="86" text-anchor="middle" fill="#6b7280" font-size="7">GPS + CellID capture</text>
+    <line x1="110" y1="66" x2="126" y2="66" stroke="#34d399" stroke-width="1.5" marker-end="url(#fa)"></line>
+    <rect x="128" y="40" width="100" height="52" rx="7" fill="#1a2035" stroke="#7c3aed"></rect>
+    <text x="178" y="62" text-anchor="middle" fill="#c084fc" font-size="9" font-weight="700">Batch Queue</text>
+    <text x="178" y="74" text-anchor="middle" fill="#f1f5f9" font-size="8">30s intervals</text>
+    <text x="178" y="86" text-anchor="middle" fill="#6b7280" font-size="7">Offline → flush later</text>
+    <line x1="230" y1="66" x2="246" y2="66" stroke="#34d399" stroke-width="1.5" marker-end="url(#fa)"></line>
+    <rect x="248" y="40" width="110" height="52" rx="7" fill="#1a2035" stroke="#059669"></rect>
+    <text x="303" y="62" text-anchor="middle" fill="#6ee7b7" font-size="9" font-weight="700">Telemetry Ingest</text>
+    <text x="303" y="74" text-anchor="middle" fill="#f1f5f9" font-size="8">Kafka raw topic</text>
+    <text x="303" y="86" text-anchor="middle" fill="#6b7280" font-size="7">Dedup + validate</text>
+    <line x1="360" y1="66" x2="376" y2="66" stroke="#34d399" stroke-width="1.5" marker-end="url(#fa)"></line>
+    <rect x="378" y="40" width="110" height="52" rx="7" fill="#1a2035" stroke="#d97706"></rect>
+    <text x="433" y="62" text-anchor="middle" fill="#fbbf24" font-size="9" font-weight="700">Map Matching</text>
+    <text x="433" y="74" text-anchor="middle" fill="#f1f5f9" font-size="8">Snap → GTFS shape</text>
+    <text x="433" y="86" text-anchor="middle" fill="#6b7280" font-size="7">PostGIS ST_ClosestPoint</text>
+    <line x1="490" y1="66" x2="506" y2="66" stroke="#34d399" stroke-width="1.5" marker-end="url(#fa)"></line>
+    <rect x="508" y="40" width="110" height="52" rx="7" fill="#1a2035" stroke="#ef4444"></rect>
+    <text x="563" y="62" text-anchor="middle" fill="#fca5a5" font-size="9" font-weight="700">Bus Clustering</text>
+    <text x="563" y="74" text-anchor="middle" fill="#f1f5f9" font-size="8">DBSCAN spatial merge</text>
+    <text x="563" y="86" text-anchor="middle" fill="#6b7280" font-size="7">N riders → 1 bus state</text>
+    <line x1="620" y1="66" x2="636" y2="66" stroke="#34d399" stroke-width="1.5" marker-end="url(#fa)"></line>
+    <rect x="638" y="40" width="110" height="52" rx="7" fill="#1a2035" stroke="#6b7280"></rect>
+    <text x="693" y="62" text-anchor="middle" fill="#f1f5f9" font-size="9" font-weight="700">Redis Cache</text>
+    <text x="693" y="74" text-anchor="middle" fill="#f1f5f9" font-size="8">+ WS Push to clients</text>
+    <text x="693" y="86" text-anchor="middle" fill="#6b7280" font-size="7">TTL 2 min per bus</text>
+    <text x="58" y="118" text-anchor="middle" fill="#4b5563" font-size="8">Step 1</text>
+    <text x="178" y="118" text-anchor="middle" fill="#4b5563" font-size="8">Step 2</text>
+    <text x="303" y="118" text-anchor="middle" fill="#4b5563" font-size="8">Step 3</text>
+    <text x="433" y="118" text-anchor="middle" fill="#4b5563" font-size="8">Step 4</text>
+    <text x="563" y="118" text-anchor="middle" fill="#4b5563" font-size="8">Step 5</text>
+    <text x="693" y="118" text-anchor="middle" fill="#4b5563" font-size="8">Step 6</text>
+  </svg>
+</div>
+
+
+<h2>Key Database Schema</h2>
+<table>
+  <thead><tr><th>Table / Key</th><th>Layer</th><th>Key Columns</th><th>Notes</th></tr></thead>
+  <tbody>
+    <tr><td><code>stops</code></td><td>PostGIS</td><td><code>stop_id, stop_name, location GEOMETRY(Point)</code></td><td>GIST spatial index — nearest-stop queries</td></tr>
+    <tr><td><code>shapes</code></td><td>PostGIS</td><td><code>shape_id, geom GEOMETRY(LineString)</code></td><td>GTFS route shapes for map-matching</td></tr>
+    <tr><td><code>live_bus_positions</code></td><td>PostGIS</td><td><code>cluster_id, position GEOMETRY, speed_kmh, confidence, updated_at</code></td><td>TimescaleDB hypertable partition</td></tr>
+    <tr><td><code>crowd_tags</code></td><td>PostGIS</td><td><code>tag_type ENUM, trust_score FLOAT, expires_at TIMESTAMPTZ</code></td><td>Auto-expire 20 min; karma-weighted trust</td></tr>
+    <tr><td><code>cell_tower_lut</code></td><td>PostGIS</td><td><code>(mcc,mnc,lac,cell_id) PK, location GEOMETRY, accuracy_m INT</code></td><td>Offline position fallback · OpenCellID import</td></tr>
+    <tr><td><code>bus:pos:{id}</code></td><td>Redis Hash</td><td><code>lat, lng, route_id, speed, confidence</code></td><td>TTL 2 min — evict stale buses</td></tr>
+    <tr><td><code>stop:eta:{stop}:{route}</code></td><td>Redis ZSet</td><td>Score = ETA epoch; member = cluster_id</td><td>TTL 90 sec — instant ETA lookup</td></tr>
+    <tr><td><code>crowd:{cluster}</code></td><td>Redis Hash</td><td><code>crowd_level, ac_status, reporter_count</code></td><td>TTL 20 min — matches tag expiry</td></tr>
+  </tbody>
+</table>
+
+<div class="sep"></div>
+
+
+<h2>Phased Rollout Plan</h2>
+<h3 style="color:#3b82d4;margin-bottom:10px">Phase 1 — MVP (Months 1–4)</h3>
+<div class="phase">
+  <div class="ph-num">1</div>
+  <div class="ph-content"><h4>Offline GTFS Seed <span class="ph-tag">Weeks 1–2</span></h4><p>Download/parse BMTC GTFS into SQLite bundle (&lt;8MB). Flutter offline search UI: route lookup by number, stop-name FTS, timetable. Ship dog-food APK to 50 internal testers.</p></div>
+</div>
+<div class="phase">
+  <div class="ph-num">2</div>
+  <div class="ph-content"><h4>Crowdsource Telemetry MVP <span class="ph-tag">Weeks 3–6</span></h4><p>"I'm On This Bus" button: GPS + cell-tower IDs at 30s intervals, batch-queue locally, flush on data. Backend: Kafka ingest → nearest-stop matcher → Redis state → WebSocket push.</p></div>
+</div>
+<div class="phase">
+  <div class="ph-num">3</div>
+  <div class="ph-content"><h4>Linear Route View + Crowd Tags <span class="ph-tag">Weeks 7–10</span></h4><p>"Where Is My Train"-style vertical stop timeline. Crowd tag drawer (Seats/Packed/AC). 20-min tag expiry. Ship to 500-person Warden beta cohort on 500D and KIA-9.</p></div>
+</div>
+<div class="phase">
+  <div class="ph-num">4</div>
+  <div class="ph-content"><h4>2-Stop Alarm + Cell-Tower LUT <span class="ph-tag">Weeks 11–16</span></h4><p>Background geofence service. Import OpenCellID + BLR crowd-built tower LUT for offline fallback. Test at Silk Board underpass dead zone. Public Play Store / TestFlight beta.</p></div>
+</div>
+<h3 style="color:#7c5cd8;margin:14px 0 10px">Phase 2 — Scale (Months 5–9)</h3>
+<div class="phase">
+  <div class="ph-num p2">5</div>
+  <div class="ph-content"><h4>Map-Matching + Bus Clustering <span class="ph-tag">Month 5–6</span></h4><p>PostGIS ST_ClosestPoint snap-to-shape. DBSCAN spatial clustering: N riders → 1 authoritative bus state. Dynamic ETAs from GTFS schedule + observed speed.</p></div>
+</div>
+<div class="phase">
+  <div class="ph-num p2">6</div>
+  <div class="ph-content"><h4>Corridor 2 Launch + Karma Leaderboard <span class="ph-tag">Month 6–7</span></h4><p>Expand to Majestic–Whitefield corridor. Public karma leaderboard, "Warden of the Week" badge. Target 1,000 DAU milestone.</p></div>
+</div>
+<div class="phase">
+  <div class="ph-num p2">7</div>
+  <div class="ph-content"><h4>B2B Analytics Dashboard Beta <span class="ph-tag">Month 7–8</span></h4><p>Enterprise dashboard: hourly OD heatmaps, corridor utilisation, AC failure frequency by route. Pilot with 2 IT park FM teams. Validate ₹30K/month price point.</p></div>
+</div>
+<h3 style="color:#0891b2;margin:14px 0 10px">Phase 3 — Monetise (Months 10–18)</h3>
+<div class="phase">
+  <div class="ph-num p3">8</div>
+  <div class="ph-content"><h4>Hyperlocal Ad Network <span class="ph-tag">Month 10–12</span></h4><p>Stop-level contextual ad SDK. Sell inventory to local businesses at bus stops. CPM ₹80–120. Transparent labelling — no intrusive interstitials.</p></div>
+</div>
+<div class="phase">
+  <div class="ph-num p3">9</div>
+  <div class="ph-content"><h4>BusElli Plus + Multi-City Expansion <span class="ph-tag">Month 13–18</span></h4><p>₹49/month Commuter Plus tier. Begin PMPML Pune GTFS integration. Raise Series A ₹8–12 Cr. Explore BMTC official data partnership / white-label backend licensing.</p></div>
+</div>
+
+<div class="sep"></div>
+
+
+<h2>Top Failure Risks &amp; Mitigations</h2>
+<div class="risk">
+  <h4>Risk 1 — Cold-Start / Chicken-and-Egg (HIGH)</h4>
+  <p>Without riders reporting, there's no live data. Without live data, no one installs. <strong>Mitigations:</strong> (a) Offline GTFS feature is standalone Day-1 value with zero crowdsourced data. (b) Paid Warden program seeds minimum viable telemetry density. (c) Historical GTFS schedule + speed profiles display as "Scheduled ETA" fallback. "Where Is My Train" proved 1,000 users on a route is enough for reliable tracking — ORR has 180,000+.</p>
+</div>
+<div class="risk m">
+  <h4>Risk 2 — BMTC Regulatory / Data Hostility (MEDIUM)</h4>
+  <p>BMTC could block data access or challenge the app. <strong>Mitigations:</strong> (a) GTFS static data is public information — scraping published PDF timetables is legally defensible. (b) Frame BusElli as complementary, not competitive. (c) Proactively approach BBMP Smart City Mission for a formal MoU pilot — give them free anonymised ridership data for official API access. (d) Apply for KBITS grant (up to ₹50L). (e) Consider Not-For-Profit Trust incorporation initially.</p>
+</div>
+<div class="risk m">
+  <h4>Risk 3 — Telemetry Accuracy &amp; User Trust Erosion (MEDIUM)</h4>
+  <p>GPS drift, spoofed bus positions, or stale crowd tags destroy trust permanently. <strong>Mitigations:</strong> (a) Trust score system: karma-weighted tags quarantined until corroborated. (b) Cluster validation: a "bus" only appears when 2+ independent GPS paths agree within 100m over 2+ minutes. (c) Confidence decay: bus icons fade after 3 min, removed after 5 min without telemetry. (d) Speed plausibility filter: reject GPS points showing &gt;80 km/h in city zones. (e) Confidence indicator visible on each bus icon.</p>
+</div>
+
+
+<h2>Seed Funding Ask</h2>
+<div class="g2">
+  <div class="card card-blue">
+    <h3>₹1.2–1.8 Cr Seed Round</h3>
+    <ul>
+      <li><strong>₹40L</strong> — Engineering (3 devs × 12 months)</li>
+      <li><strong>₹25L</strong> — Backend infrastructure (AWS/GCP)</li>
+      <li><strong>₹20L</strong> — Warden incentive program (Y1 acquisition)</li>
+      <li><strong>₹15L</strong> — Legal, DPDP Act compliance, GTFS licensing</li>
+      <li><strong>₹20L</strong> — 6-month runway buffer</li>
+    </ul>
+  </div>
+  <div class="card card-green">
+    <h3>Institutional Data Partnerships</h3>
+    <ul>
+      <li>BMTC Open GTFS data MoU (non-commercial research clause)</li>
+      <li>IIT Bangalore / IISC mobility lab research partnership</li>
+      <li>BBMP Smart City Mission integration pilot</li>
+      <li>KBITS grant application (Karnataka startup, up to ₹50L)</li>
+    </ul>
+  </div>
+</div>
+
+<footer>Made with IBM Bob</footer>
+</div>
+</body>
+</html>
