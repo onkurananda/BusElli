@@ -1,0 +1,34 @@
+{
+  "name": "@buselli/gtfs-parser",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "BusElli GTFS parser — downloads BMTC feed, parses, writes PostgreSQL/PostGIS",
+  "main": "dist/index.js",
+  "bin": {
+    "buselli-gtfs": "dist/cli.js"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "lint": "eslint src test",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist coverage"
+  },
+  "dependencies": {
+    "@buselli/shared": "*",
+    "postgres": "^3.4.3",
+    "csv-parse": "^5.5.3",
+    "zod": "^3.22.4",
+    "pino": "^8.19.0"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.8",
+    "@types/node": "^20.11.0",
+    "tsx": "^4.7.0",
+    "typescript": "^5.4.0",
+    "vitest": "^1.4.0",
+    "@vitest/coverage-v8": "^1.4.0"
+  }
+}

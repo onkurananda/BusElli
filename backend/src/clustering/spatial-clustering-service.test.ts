@@ -241,23 +241,25 @@ describe('SpatialClusteringService.refreshForRoute', () => {
 
   it('calls flushRoute before writing new clusters to avoid stale state', async () => {
     const points = [makePoint()];
+    const callOrder: string[] = [];
     const deps = makeDeps(points);
     const svc = new SpatialClusteringService(deps);
-    const flushOrder: string[] = [];
-    const writeOrder: string[] = [];
 
+    // Override the fakes to record global call order
     (deps.store.flushRoute as ReturnType<typeof vi.fn>).mockImplementation(async (r: string) => {
-      flushOrder.push(`flush:${r}`);
+      callOrder.push(`flush:${r}`);
     });
     (deps.store.putCluster as ReturnType<typeof vi.fn>).mockImplementation(async (c: LiveCluster) => {
-      writeOrder.push(`write:${c.routeId}`);
+      callOrder.push(`write:${c.routeId}`);
     });
 
     await svc.refreshForRoute('500D');
 
-    expect(flushOrder[0]).toBe('flush:500D');
-    expect(writeOrder[0]).toBe('write:500D');
-    expect(flushOrder.indexOf('flush:500D')).toBeLessThan(writeOrder.indexOf('write:500D'));
+    const flushIdx = callOrder.indexOf('flush:500D');
+    const writeIdx = callOrder.indexOf('write:500D');
+    expect(flushIdx).toBeGreaterThanOrEqual(0);
+    expect(writeIdx).toBeGreaterThanOrEqual(0);
+    expect(flushIdx).toBeLessThan(writeIdx);
   });
 
   it('uses the configured telemetryWindowSeconds when querying recent telemetry', async () => {

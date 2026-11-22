@@ -8,6 +8,7 @@
  *
  * All writes go through this single class so TTLs are always applied consistently.
  */
+import { makeConfidenceScore } from '../eta/types.js';
 import type { Redis } from 'ioredis';
 import type { LiveCluster } from './spatial-clustering-service.js';
 
@@ -152,7 +153,7 @@ function deserialiseCluster(data: Record<string, string>): LiveCluster {
     lat:          parseFloat(data['lat']        ?? '0'),
     lng:          parseFloat(data['lng']        ?? '0'),
     speedKmh:     parseFloat(data['speedKmh']   ?? '0'),
-    confidence:   parseFloat(data['confidence'] ?? '0'),
+    confidence:   makeConfidenceScore(parseFloat(data['confidence'] ?? '0')),
     riderCount:   parseInt(data['riderCount']   ?? '1', 10),
     updatedAt:    new Date(data['updatedAt']    ?? new Date().toISOString()),
     nearestStopId: data['nearestStopId'] !== '' ? data['nearestStopId'] : undefined,
